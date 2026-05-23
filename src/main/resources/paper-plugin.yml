@@ -1,0 +1,26 @@
+name: ServerDoctor
+version: '0.2.0'
+main: com.jimm.serverdoctor.ServerDoctorPlugin
+description: ServerDoctor Lite - server health reports and chunk analysis
+author: jimm
+api-version: '26.1.2'
+
+permissions:
+  serverdoctor.use:
+    description: Use /doctor and /doctor help for quick server stats
+    default: true
+  serverdoctor.report:
+    description: Use /doctor report for a full health report with warnings
+    default: op
+  serverdoctor.alerts:
+    description: Use /doctor alerts, /doctor discord, and receive automatic health alert messages
+    default: op
+  serverdoctor.export:
+    description: Use /doctor export to save a text report file
+    default: op
+  serverdoctor.reload:
+    description: Use /doctor reload to reload config.yml without restarting
+    default: op
+  serverdoctor.chunks:
+    description: Use /doctor chunks to analyze the heaviest loaded chunks
+    default: op

@@ -1,0 +1,35 @@
+# ServerDoctor — edit values, then run /doctor reload (no restart needed).
+
+memory-warning-percent: 80
+entity-warning-limit: 3000
+loaded-chunk-warning-limit: 5000
+tps-warning-threshold: 18.0
+mspt-warning-threshold: 50.0
+
+alerts-enabled: true
+alert-check-interval-seconds: 60
+
+# --- Discord webhook alerts (optional) ---
+# Create a webhook in Discord: Server Settings → Integrations → Webhooks
+discord-alerts-enabled: false
+discord-webhook-url: ""
+discord-alert-title: "ServerDoctor Alert"
+
+# --- Chunk analyzer (/doctor chunks) ---
+chunk-analyzer-enabled: true
+chunk-analyzer-top-limit: 5
+chunk-warning-entity-limit: 100
+chunk-warning-dropped-item-limit: 50
+chunk-warning-hopper-limit: 30
+
+# --- Chat messages ---
+# Use & color codes: &a green  &c red  &e yellow  &6 gold  &7 gray  &f white  &b aqua  &r reset
+# The plugin adds "prefix" automatically to most lines — you usually do not repeat it below.
+
+messages:
+  prefix: "&6[ServerDoctor]&r "
+  no-permission: "&cYou do not have permission. Ask an admin for &f'{permission}'&c."
+  reload-success: "&aConfiguration reloaded. Alert checks restarted."
+  report-generated: "&aReport generated successfully: &f{file}"
+  no-warnings: "&aNo major issues detected."
+  unknown-command: "&cUnknown subcommand. Use &f/doctor help &cfor available commands."

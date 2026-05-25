@@ -24,6 +24,8 @@ All commands use the base **`/doctor`** command. Tab completion shows only subco
 | `/doctor cleanup confirm` | `serverdoctor.cleanup.confirm` |
 | `/doctor export` | `serverdoctor.export` |
 | `/doctor reload` | `serverdoctor.reload` |
+| `/doctor update` | `serverdoctor.update.notify` |
+| `/doctor update check` | `serverdoctor.update.check` |
 
 ---
 
@@ -127,3 +129,24 @@ Includes server info, performance, chunks, warnings, recommendations, and config
 ## `/doctor reload`
 
 Reloads `config.yml` and restarts background alert and lag spike checks.
+
+---
+
+## `/doctor update`
+
+Shows:
+
+- Your **current** installed version
+- The **latest known** version from the last SpigotMC check (or “not checked yet”)
+- Whether an **update is available**
+- A clickable link to the SpigotMC resource page (when configured)
+
+Does not download anything.
+
+---
+
+## `/doctor update check`
+
+Runs a **live** SpigotMC version check asynchronously and prints the result when finished.
+
+Requires `serverdoctor.update.check`. The network request does not block the main server thread.

@@ -23,6 +23,7 @@ First public beta release of **ServerDoctor Lite** for Paper 26.1.x.
 - **Diagnostic export** — `serverdoctor-diagnostic-*.txt` full shareable reports
 - **Lag spike detection** — `/doctor spikes`, alerts, and `lag-spikes.log`
 - **`/doctor about`** — version and plugin information (`serverdoctor.about`, default: true)
+- **SpigotMC update checker** — `/doctor update`, `/doctor update check`, startup and join notifications (notify only)
 - Automatic health alerts, config reload, permission-based help and tab completion
 
 ### Fixed

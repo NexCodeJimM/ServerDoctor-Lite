@@ -16,6 +16,8 @@ public final class Permissions {
     public static final String SPIKES = "serverdoctor.spikes";
     public static final String STATUS = "serverdoctor.status";
     public static final String ABOUT = "serverdoctor.about";
+    public static final String UPDATE_NOTIFY = "serverdoctor.update.notify";
+    public static final String UPDATE_CHECK = "serverdoctor.update.check";
 
     private Permissions() {
     }
@@ -68,10 +70,19 @@ public final class Permissions {
         return sender.hasPermission(ABOUT);
     }
 
+    public static boolean canUpdateNotify(CommandSender sender) {
+        return sender.hasPermission(UPDATE_NOTIFY);
+    }
+
+    public static boolean canUpdateCheck(CommandSender sender) {
+        return sender.hasPermission(UPDATE_CHECK);
+    }
+
     public static boolean canRunAnyDoctorCommand(CommandSender sender) {
         return canUse(sender) || canReport(sender) || canAlerts(sender)
                 || canExport(sender) || canReload(sender) || canChunks(sender) || canTpChunk(sender)
                 || canCleanupPreview(sender) || canCleanupConfirm(sender) || canSpikes(sender)
-                || canStatus(sender) || canAbout(sender);
+                || canStatus(sender) || canAbout(sender) || canUpdateNotify(sender)
+                || canUpdateCheck(sender);
     }
 }

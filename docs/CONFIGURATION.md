@@ -93,6 +93,31 @@ cleanup:
 
 ---
 
+## SpigotMC update checker
+
+```yaml
+update-checker:
+  enabled: true
+  spigot-resource-id: 135585
+  check-on-startup: true
+  notify-ops-on-join: true
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `true` | Master switch for update checks |
+| `spigot-resource-id` | `0` | SpigotMC numeric resource ID (`0` = disabled, no checks) |
+| `check-on-startup` | `true` | Check SpigotMC when the server starts (async) |
+| `notify-ops-on-join` | `true` | Remind staff with `serverdoctor.update.notify` when an update is known |
+
+**ServerDoctor resource:** [serverdoctor.135585](https://www.spigotmc.org/resources/serverdoctor.135585/) — use ID **`135585`**.
+
+If `spigot-resource-id` is `0` while the checker is enabled, the console shows a configuration warning and **no network request** is made.
+
+The checker uses SpigotMC’s public API (`legacy/update.php`). It compares your installed version (from plugin metadata) with the latest version on SpigotMC. **No files are downloaded.**
+
+---
+
 ## Lag spike detection
 
 ```yaml

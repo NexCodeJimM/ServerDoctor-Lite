@@ -19,6 +19,7 @@
 - Safe cleanup preview and confirm
 - Lag spike detection with optional Discord alerts
 - Full diagnostic `.txt` export for support tickets
+- Optional SpigotMC update notifications (notify only, no auto-download)
 
 **Lite edition** — no web dashboard or automatic world editing. See [CHANGELOG.md](CHANGELOG.md) for details.
 
@@ -62,6 +63,7 @@
 /doctor report       Full report + recommendations
 /doctor chunks       Heaviest loaded chunks
 /doctor export       Diagnostic .txt report
+/doctor update       SpigotMC version status
 /doctor help         Commands you can use
 ```
 

@@ -42,3 +42,9 @@ permissions:
   serverdoctor.about:
     description: Use /doctor about to view plugin version and information
     default: true
+  serverdoctor.update.notify:
+    description: See /doctor update status and receive notifications when a newer version is on SpigotMC
+    default: op
+  serverdoctor.update.check:
+    description: Use /doctor update check to manually check SpigotMC for updates
+    default: op

@@ -13,6 +13,7 @@ public final class ServerDoctorPlugin extends JavaPlugin {
     private final LagSpikeHistory lagSpikeHistory = new LagSpikeHistory();
     private AlertService alertService;
     private LagSpikeDetectorService lagSpikeDetectorService;
+    private UpdateCheckerService updateCheckerService;
 
     @Override
     public void onEnable() {
@@ -37,6 +38,10 @@ public final class ServerDoctorPlugin extends JavaPlugin {
         );
         lagSpikeDetectorService.start();
 
+        updateCheckerService = new UpdateCheckerService(this, pluginConfig);
+        getServer().getPluginManager().registerEvents(updateCheckerService, this);
+        updateCheckerService.onEnable();
+
         registerCommand(
                 "doctor",
                 new DoctorCommand(
@@ -45,7 +50,8 @@ public final class ServerDoctorPlugin extends JavaPlugin {
                         alertService,
                         chunkAnalyzerService,
                         recommendationService,
-                        lagSpikeDetectorService
+                        lagSpikeDetectorService,
+                        updateCheckerService
                 )
         );
 
@@ -73,5 +79,9 @@ public final class ServerDoctorPlugin extends JavaPlugin {
 
     public LagSpikeHistory getLagSpikeHistory() {
         return lagSpikeHistory;
+    }
+
+    public UpdateCheckerService getUpdateCheckerService() {
+        return updateCheckerService;
     }
 }

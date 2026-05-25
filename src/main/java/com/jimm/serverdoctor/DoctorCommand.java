@@ -24,6 +24,7 @@ public final class DoctorCommand implements BasicCommand {
     private final ChunkAnalyzerService chunkAnalyzerService;
     private final RecommendationService recommendationService;
     private final LagSpikeDetectorService lagSpikeDetectorService;
+    private final UpdateCheckerService updateCheckerService;
 
     public DoctorCommand(
             ServerDoctorPlugin plugin,
@@ -31,7 +32,8 @@ public final class DoctorCommand implements BasicCommand {
             AlertService alertService,
             ChunkAnalyzerService chunkAnalyzerService,
             RecommendationService recommendationService,
-            LagSpikeDetectorService lagSpikeDetectorService
+            LagSpikeDetectorService lagSpikeDetectorService,
+            UpdateCheckerService updateCheckerService
     ) {
         this.plugin = plugin;
         this.pluginEnabledAtMillis = plugin.getEnabledAtMillis();
@@ -40,6 +42,7 @@ public final class DoctorCommand implements BasicCommand {
         this.chunkAnalyzerService = chunkAnalyzerService;
         this.recommendationService = recommendationService;
         this.lagSpikeDetectorService = lagSpikeDetectorService;
+        this.updateCheckerService = updateCheckerService;
     }
 
     @Override
@@ -136,6 +139,11 @@ public final class DoctorCommand implements BasicCommand {
             return;
         }
 
+        if (subcommand.equalsIgnoreCase("update")) {
+            handleUpdate(sender, args);
+            return;
+        }
+
         if (subcommand.equalsIgnoreCase("help")) {
             if (!Permissions.canUse(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
@@ -179,6 +187,15 @@ public final class DoctorCommand implements BasicCommand {
                 return cleanupSubcommandSuggestions(sender).stream()
                         .filter(option -> option.startsWith(typed))
                         .toList();
+            }
+        }
+
+        if (args.length >= 2 && args[0].equalsIgnoreCase("update") && Permissions.canUpdateCheck(sender)) {
+            if (args.length == 2) {
+                String typed = args[1].toLowerCase(Locale.ROOT);
+                if ("check".startsWith(typed)) {
+                    return List.of("check");
+                }
             }
         }
 
@@ -292,6 +309,22 @@ public final class DoctorCommand implements BasicCommand {
             ));
             anyCommandListed = true;
         }
+        if (Permissions.canUpdateNotify(sender) || Permissions.canUpdateCheck(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor update",
+                    "SpigotMC version status and download link"
+            ));
+            if (Permissions.canUpdateCheck(sender)) {
+                MessageUtil.send(sender, MessageUtil.helpEntry(
+                        "/doctor update check",
+                        "Check SpigotMC now for a newer version"
+                ));
+            }
+            anyCommandListed = true;
+        }
         if (Permissions.canUse(sender)) {
             MessageUtil.send(sender, MessageUtil.helpEntry("/doctor help", "Show this help menu"));
         }
@@ -337,7 +370,28 @@ public final class DoctorCommand implements BasicCommand {
         if (Permissions.canStatus(sender)) {
             subcommands.add("status");
         }
+        if (Permissions.canUpdateNotify(sender) || Permissions.canUpdateCheck(sender)) {
+            subcommands.add("update");
+        }
         return subcommands;
+    }
+
+    private void handleUpdate(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("check")) {
+            if (!Permissions.canUpdateCheck(sender)) {
+                MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.UPDATE_CHECK));
+                return;
+            }
+            MessageUtil.send(sender, MessageUtil.info("&7Checking SpigotMC for updates..."));
+            updateCheckerService.runCheckAsync(true, sender);
+            return;
+        }
+
+        if (!Permissions.canUpdateNotify(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.UPDATE_NOTIFY));
+            return;
+        }
+        updateCheckerService.sendUpdateStatus(sender, false);
     }
 
     private void sendServerStatus(CommandSender sender, ServerStats stats) {
@@ -787,6 +841,7 @@ public final class DoctorCommand implements BasicCommand {
         pluginConfig.load();
         alertService.start();
         lagSpikeDetectorService.start();
+        updateCheckerService.onReload();
         MessageUtil.send(sender, MessageUtil.reloadSuccess());
     }
 

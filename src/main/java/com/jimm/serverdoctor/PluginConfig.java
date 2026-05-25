@@ -25,6 +25,7 @@ public final class PluginConfig {
     private boolean chunkTeleportEnabled;
     private final CleanupConfig cleanup = new CleanupConfig();
     private final LagSpikeConfig lagSpike = new LagSpikeConfig();
+    private final UpdateCheckerConfig updateChecker = new UpdateCheckerConfig();
     private final MessageConfig messages = new MessageConfig();
 
     public PluginConfig(ServerDoctorPlugin plugin) {
@@ -59,6 +60,7 @@ public final class PluginConfig {
 
         cleanup.load(config);
         lagSpike.load(config);
+        updateChecker.load(config);
         messages.load(config);
         MessageUtil.setMessages(messages);
     }
@@ -151,5 +153,9 @@ public final class PluginConfig {
 
     public LagSpikeConfig getLagSpike() {
         return lagSpike;
+    }
+
+    public UpdateCheckerConfig getUpdateChecker() {
+        return updateChecker;
     }
 }

@@ -20,6 +20,8 @@ ServerDoctor Lite uses one permission node per feature. Defaults are suitable fo
 | `serverdoctor.cleanup.preview` | `op` | `/doctor cleanup preview` |
 | `serverdoctor.cleanup.confirm` | `op` | `/doctor cleanup confirm` |
 | `serverdoctor.spikes` | `op` | `/doctor spikes` |
+| `serverdoctor.update.notify` | `op` | `/doctor update`, receive SpigotMC update notifications on join |
+| `serverdoctor.update.check` | `op` | `/doctor update check` (manual SpigotMC version check) |
 
 ---
 
@@ -69,6 +71,16 @@ Automatic **health** and **lag spike** chat messages are sent only to online pla
 `serverdoctor.alerts`
 
 Discord webhooks are separate (config + URL); they do not use in-game permissions.
+
+---
+
+## Update notifications
+
+SpigotMC update messages are sent to online players with:
+
+`serverdoctor.update.notify`
+
+The plugin **never downloads updates automatically** — it only notifies and links to the SpigotMC resource page.
 
 ---
 

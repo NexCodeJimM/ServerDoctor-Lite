@@ -39,6 +39,14 @@ cleanup:
   cooldown-seconds: 300
   log-actions: true
 
+# --- SpigotMC update checker (notify only — never auto-downloads) ---
+# Resource: https://www.spigotmc.org/resources/serverdoctor.135585/
+update-checker:
+  enabled: true
+  spigot-resource-id: 135585
+  check-on-startup: true
+  notify-ops-on-join: true
+
 # --- Lag spike detection ---
 lag-spike-detection:
   enabled: true

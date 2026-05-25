@@ -21,6 +21,10 @@ public final class PluginConfig {
     private int chunkWarningEntityLimit;
     private int chunkWarningDroppedItemLimit;
     private int chunkWarningHopperLimit;
+    private boolean recommendationsEnabled;
+    private boolean chunkTeleportEnabled;
+    private final CleanupConfig cleanup = new CleanupConfig();
+    private final LagSpikeConfig lagSpike = new LagSpikeConfig();
     private final MessageConfig messages = new MessageConfig();
 
     public PluginConfig(ServerDoctorPlugin plugin) {
@@ -32,22 +36,29 @@ public final class PluginConfig {
         plugin.reloadConfig();
 
         FileConfiguration config = plugin.getConfig();
-        memoryWarningPercent = config.getDouble("memory-warning-percent", 80.0);
-        entityWarningLimit = config.getLong("entity-warning-limit", 3000L);
-        loadedChunkWarningLimit = config.getInt("loaded-chunk-warning-limit", 5000);
-        tpsWarningThreshold = config.getDouble("tps-warning-threshold", 18.0);
-        msptWarningThreshold = config.getDouble("mspt-warning-threshold", 50.0);
+        memoryWarningPercent = ConfigDefaults.percent(config.getDouble("memory-warning-percent", 80.0), 80.0);
+        entityWarningLimit = ConfigDefaults.atLeast(config.getLong("entity-warning-limit", 3000L), 1, 3000L);
+        loadedChunkWarningLimit = ConfigDefaults.atLeast(config.getInt("loaded-chunk-warning-limit", 5000), 1, 5000);
+        tpsWarningThreshold = ConfigDefaults.clamp(config.getDouble("tps-warning-threshold", 18.0), 0.1, 20.0, 18.0);
+        msptWarningThreshold = ConfigDefaults.clamp(config.getDouble("mspt-warning-threshold", 50.0), 0.0, 1000.0, 50.0);
         alertsEnabled = config.getBoolean("alerts-enabled", true);
-        alertCheckIntervalSeconds = config.getInt("alert-check-interval-seconds", 60);
+        alertCheckIntervalSeconds = ConfigDefaults.atLeast(config.getInt("alert-check-interval-seconds", 60), 1, 60);
         discordAlertsEnabled = config.getBoolean("discord-alerts-enabled", false);
-        discordWebhookUrl = config.getString("discord-webhook-url", "");
-        discordAlertTitle = config.getString("discord-alert-title", "ServerDoctor Alert");
+        discordWebhookUrl = ConfigDefaults.nonNullString(config.getString("discord-webhook-url", ""), "").trim();
+        discordAlertTitle = ConfigDefaults.nonNullString(
+                config.getString("discord-alert-title", "ServerDoctor Alert"),
+                "ServerDoctor Alert"
+        );
         chunkAnalyzerEnabled = config.getBoolean("chunk-analyzer-enabled", true);
-        chunkAnalyzerTopLimit = config.getInt("chunk-analyzer-top-limit", 5);
-        chunkWarningEntityLimit = config.getInt("chunk-warning-entity-limit", 100);
-        chunkWarningDroppedItemLimit = config.getInt("chunk-warning-dropped-item-limit", 50);
-        chunkWarningHopperLimit = config.getInt("chunk-warning-hopper-limit", 30);
+        chunkAnalyzerTopLimit = ConfigDefaults.atLeast(config.getInt("chunk-analyzer-top-limit", 5), 1, 5);
+        chunkWarningEntityLimit = ConfigDefaults.atLeast(config.getInt("chunk-warning-entity-limit", 100), 1, 100);
+        chunkWarningDroppedItemLimit = ConfigDefaults.atLeast(config.getInt("chunk-warning-dropped-item-limit", 50), 1, 50);
+        chunkWarningHopperLimit = ConfigDefaults.atLeast(config.getInt("chunk-warning-hopper-limit", 30), 1, 30);
+        recommendationsEnabled = config.getBoolean("recommendations-enabled", true);
+        chunkTeleportEnabled = config.getBoolean("chunk-teleport-enabled", true);
 
+        cleanup.load(config);
+        lagSpike.load(config);
         messages.load(config);
         MessageUtil.setMessages(messages);
     }
@@ -124,5 +135,21 @@ public final class PluginConfig {
 
     public int getChunkWarningHopperLimit() {
         return chunkWarningHopperLimit;
+    }
+
+    public boolean isRecommendationsEnabled() {
+        return recommendationsEnabled;
+    }
+
+    public boolean isChunkTeleportEnabled() {
+        return chunkTeleportEnabled;
+    }
+
+    public CleanupConfig getCleanup() {
+        return cleanup;
+    }
+
+    public LagSpikeConfig getLagSpike() {
+        return lagSpike;
     }
 }

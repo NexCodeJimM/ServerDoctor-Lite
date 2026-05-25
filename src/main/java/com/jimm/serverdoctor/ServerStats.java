@@ -1,7 +1,14 @@
 package com.jimm.serverdoctor;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.World;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.Hopper;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 public final class ServerStats {
 
@@ -12,6 +19,9 @@ public final class ServerStats {
     public final double memoryUsagePercent;
     public final String worldNames;
     public final long entityCount;
+    public final int droppedItemCount;
+    public final int mobCount;
+    public final int hopperCount;
     public final int loadedChunkCount;
     public final String uptime;
     public final double currentTps;
@@ -25,6 +35,9 @@ public final class ServerStats {
             double memoryUsagePercent,
             String worldNames,
             long entityCount,
+            int droppedItemCount,
+            int mobCount,
+            int hopperCount,
             int loadedChunkCount,
             String uptime,
             double currentTps,
@@ -37,6 +50,9 @@ public final class ServerStats {
         this.memoryUsagePercent = memoryUsagePercent;
         this.worldNames = worldNames;
         this.entityCount = entityCount;
+        this.droppedItemCount = droppedItemCount;
+        this.mobCount = mobCount;
+        this.hopperCount = hopperCount;
         this.loadedChunkCount = loadedChunkCount;
         this.uptime = uptime;
         this.currentTps = currentTps;
@@ -53,6 +69,8 @@ public final class ServerStats {
             memoryPercent = (usedBytes * 100.0) / maxBytes;
         }
 
+        EntityBreakdown breakdown = countEntityBreakdown();
+
         return new ServerStats(
                 Bukkit.getOnlinePlayers().size(),
                 Bukkit.getMaxPlayers(),
@@ -60,8 +78,11 @@ public final class ServerStats {
                 maxBytes,
                 memoryPercent,
                 formatWorldNames(),
-                countEntitiesInAllWorlds(),
-                countLoadedChunksInAllWorlds(),
+                breakdown.totalEntities,
+                breakdown.droppedItems,
+                breakdown.mobs,
+                breakdown.hoppers,
+                breakdown.loadedChunks,
                 formatUptime(System.currentTimeMillis() - pluginEnabledAtMillis),
                 ServerPerformance.readCurrentTps(),
                 ServerPerformance.readMspt()
@@ -125,19 +146,37 @@ public final class ServerStats {
         return names.toString();
     }
 
-    private static long countEntitiesInAllWorlds() {
-        long total = 0;
+    private static EntityBreakdown countEntityBreakdown() {
+        long totalEntities = 0;
+        int droppedItems = 0;
+        int mobs = 0;
+        int hoppers = 0;
+        int loadedChunks = 0;
+
         for (World world : Bukkit.getWorlds()) {
-            total += world.getEntities().size();
+            for (Entity entity : world.getEntities()) {
+                totalEntities++;
+                if (entity instanceof Item) {
+                    droppedItems++;
+                } else if (entity instanceof LivingEntity && !(entity instanceof Player)) {
+                    mobs++;
+                }
+            }
+
+            Chunk[] chunks = world.getLoadedChunks();
+            loadedChunks += chunks.length;
+            for (Chunk chunk : chunks) {
+                for (BlockState blockState : chunk.getTileEntities()) {
+                    if (blockState instanceof Hopper) {
+                        hoppers++;
+                    }
+                }
+            }
         }
-        return total;
+
+        return new EntityBreakdown(totalEntities, droppedItems, mobs, hoppers, loadedChunks);
     }
 
-    private static int countLoadedChunksInAllWorlds() {
-        int total = 0;
-        for (World world : Bukkit.getWorlds()) {
-            total += world.getLoadedChunks().length;
-        }
-        return total;
+    private record EntityBreakdown(long totalEntities, int droppedItems, int mobs, int hoppers, int loadedChunks) {
     }
 }

@@ -8,23 +8,48 @@ public final class ServerDoctorPlugin extends JavaPlugin {
     private PluginConfig pluginConfig;
     private DiscordWebhookService discordWebhookService;
     private ChunkAnalyzerService chunkAnalyzerService;
+    private RecommendationService recommendationService;
+    private final CleanupHistory cleanupHistory = new CleanupHistory();
+    private final LagSpikeHistory lagSpikeHistory = new LagSpikeHistory();
     private AlertService alertService;
+    private LagSpikeDetectorService lagSpikeDetectorService;
 
     @Override
     public void onEnable() {
         enabledAtMillis = System.currentTimeMillis();
 
+        PluginDataFolders.ensureReady(this);
+
         pluginConfig = new PluginConfig(this);
         pluginConfig.load();
 
         discordWebhookService = new DiscordWebhookService(this, pluginConfig);
-        chunkAnalyzerService = new ChunkAnalyzerService(pluginConfig);
+        recommendationService = new RecommendationService();
+        chunkAnalyzerService = new ChunkAnalyzerService(pluginConfig, recommendationService);
         alertService = new AlertService(this, pluginConfig, discordWebhookService);
         alertService.start();
 
-        registerCommand("doctor", new DoctorCommand(this, pluginConfig, alertService, chunkAnalyzerService));
+        lagSpikeDetectorService = new LagSpikeDetectorService(
+                this,
+                pluginConfig,
+                discordWebhookService,
+                lagSpikeHistory
+        );
+        lagSpikeDetectorService.start();
 
-        getLogger().info("ServerDoctor Lite enabled. Commands: /doctor, report, alerts, export, reload, discord, chunks.");
+        registerCommand(
+                "doctor",
+                new DoctorCommand(
+                        this,
+                        pluginConfig,
+                        alertService,
+                        chunkAnalyzerService,
+                        recommendationService,
+                        lagSpikeDetectorService
+                )
+        );
+
+        getLogger().info("ServerDoctor Lite enabled.");
     }
 
     @Override
@@ -32,10 +57,21 @@ public final class ServerDoctorPlugin extends JavaPlugin {
         if (alertService != null) {
             alertService.stop();
         }
+        if (lagSpikeDetectorService != null) {
+            lagSpikeDetectorService.stop();
+        }
         getLogger().info("ServerDoctor disabled.");
     }
 
     public long getEnabledAtMillis() {
         return enabledAtMillis;
+    }
+
+    public CleanupHistory getCleanupHistory() {
+        return cleanupHistory;
+    }
+
+    public LagSpikeHistory getLagSpikeHistory() {
+        return lagSpikeHistory;
     }
 }

@@ -43,6 +43,15 @@ Desktop.ini
 *.temp
 *.cache
 
+# --- Plugin runtime data (if generated inside a test checkout) ---
+**/ServerDoctor/reports/
+**/ServerDoctor/logs/
+
+# --- Release packages (attach JARs to GitHub Releases — do not commit binaries) ---
+release/**/*.jar
+release/**/*.zip
+release/**/*.sha256
+
 # --- Local Minecraft server (do not commit test servers) ---
 server/
 run/

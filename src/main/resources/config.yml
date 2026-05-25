@@ -22,6 +22,32 @@ chunk-warning-entity-limit: 100
 chunk-warning-dropped-item-limit: 50
 chunk-warning-hopper-limit: 30
 
+# Clickable teleport from /doctor chunks (requires serverdoctor.tpchunk)
+chunk-teleport-enabled: true
+
+# --- Smart recommendations (report, chunks, export) ---
+# Advisory tips only — ServerDoctor does not change the world automatically.
+recommendations-enabled: true
+
+# --- Cleanup (/doctor cleanup preview | confirm) ---
+# Defaults are safe: only ground items, not mobs.
+cleanup:
+  enabled: true
+  include-dropped-items: true
+  include-hostile-mobs: false
+  include-passive-mobs: false
+  cooldown-seconds: 300
+  log-actions: true
+
+# --- Lag spike detection ---
+lag-spike-detection:
+  enabled: true
+  check-interval-seconds: 30
+  mspt-spike-threshold: 80.0
+  tps-drop-threshold: 15.0
+  alert-cooldown-seconds: 300
+  log-spikes: true
+
 # --- Chat messages ---
 # Use & color codes: &a green  &c red  &e yellow  &6 gold  &7 gray  &f white  &b aqua  &r reset
 # The plugin adds "prefix" automatically to most lines — you usually do not repeat it below.
@@ -29,7 +55,7 @@ chunk-warning-hopper-limit: 30
 messages:
   prefix: "&6[ServerDoctor]&r "
   no-permission: "&cYou do not have permission. Ask an admin for &f'{permission}'&c."
-  reload-success: "&aConfiguration reloaded. Alert checks restarted."
+  reload-success: "&aConfiguration reloaded. All services restarted."
   report-generated: "&aReport generated successfully: &f{file}"
   no-warnings: "&aNo major issues detected."
   unknown-command: "&cUnknown subcommand. Use &f/doctor help &cfor available commands."

@@ -1,6 +1,8 @@
 package com.jimm.serverdoctor;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
@@ -95,6 +97,32 @@ public final class MessageUtil {
                 .append(Component.text(sectionName, NamedTextColor.YELLOW));
     }
 
+    /**
+     * Chunk analyzer rank line — location is clickable when {@code teleportClickable} is true.
+     */
+    public static Component chunkRankHeader(int rank, ChunkAnalysisResult result, boolean teleportClickable) {
+        Component header = Component.text("▸ ", NamedTextColor.GOLD)
+                .append(Component.text("#" + rank + " — ", NamedTextColor.YELLOW));
+
+        if (!teleportClickable) {
+            return header.append(Component.text(
+                    result.worldName + " [" + result.chunkCoordinates() + "]",
+                    NamedTextColor.WHITE
+            ));
+        }
+
+        return header.append(clickableChunkLocation(result));
+    }
+
+    public static Component clickableChunkLocation(ChunkAnalysisResult result) {
+        String command = ChunkTeleportService.buildRunCommand(result.worldName, result.chunkX, result.chunkZ);
+        String label = result.worldName + " [" + result.chunkCoordinates() + "]";
+
+        return Component.text(label, NamedTextColor.AQUA, TextDecoration.UNDERLINED)
+                .clickEvent(ClickEvent.runCommand(command))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to teleport to this chunk", NamedTextColor.GRAY)));
+    }
+
     public static Component stat(String label, String value) {
         return Component.text("  ", NamedTextColor.GRAY)
                 .append(Component.text(label + ": ", NamedTextColor.AQUA))
@@ -128,6 +156,12 @@ public final class MessageUtil {
                 .append(statusBadge(StatusLevel.WARNING))
                 .append(Component.text(" ", NamedTextColor.GRAY))
                 .append(Component.text(warningText, NamedTextColor.YELLOW));
+    }
+
+    public static Component recommendationBullet(String recommendationText) {
+        return Component.text("  ", NamedTextColor.GRAY)
+                .append(Component.text("• ", NamedTextColor.GREEN))
+                .append(Component.text(recommendationText, NamedTextColor.GRAY));
     }
 
     public static Component permissionDenied(String permissionNode) {

@@ -59,6 +59,62 @@ public final class DiscordWebhookService {
                 });
     }
 
+    /**
+     * Queues a Discord message for a lag spike alert.
+     */
+    public void sendLagSpike(LagSpikeEvent spike, LagSpikeConfig lagSpikeConfig) {
+        if (!pluginConfig.shouldSendDiscordAlerts()) {
+            return;
+        }
+
+        String webhookUrl = pluginConfig.getDiscordWebhookUrl().trim();
+        String jsonBody = buildLagSpikeJsonPayload(spike, lagSpikeConfig);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(webhookUrl))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .whenComplete((response, error) -> {
+                    if (error != null) {
+                        plugin.getLogger().log(Level.WARNING, "Discord lag spike webhook failed", error);
+                        return;
+                    }
+                    int statusCode = response.statusCode();
+                    if (statusCode < 200 || statusCode >= 300) {
+                        plugin.getLogger().warning(
+                                "Discord lag spike webhook returned HTTP " + statusCode
+                        );
+                    }
+                });
+    }
+
+    private String buildLagSpikeJsonPayload(LagSpikeEvent spike, LagSpikeConfig lagSpikeConfig) {
+        String serverName = Bukkit.getServer().getName();
+        String time = spike.formattedDetectedAt();
+        String title = pluginConfig.getDiscordAlertTitle() + " — Lag Spike";
+
+        return "{"
+                + "\"username\":\"ServerDoctor\","
+                + "\"embeds\":[{"
+                + "\"title\":\"" + escapeJson(title) + "\","
+                + "\"color\":15105570,"
+                + "\"fields\":["
+                + field("Server", serverName, true)
+                + "," + field("Trigger", spike.triggerSummary(), true)
+                + "," + field("TPS", String.format("%.2f (limit %.1f)", spike.tps(), lagSpikeConfig.getTpsDropThreshold()), true)
+                + "," + field("MSPT", String.format("%.2f ms (limit %.1f ms)", spike.mspt(), lagSpikeConfig.getMsptSpikeThreshold()), true)
+                + "," + field("Memory", String.format("%.1f%%", spike.memoryUsagePercent()), true)
+                + "," + field("Entities", String.valueOf(spike.entityCount()), true)
+                + "," + field("Loaded chunks", String.valueOf(spike.loadedChunkCount()), true)
+                + "," + field("Time", time, false)
+                + "]"
+                + "}]"
+                + "}";
+    }
+
     private String buildJsonPayload(AlertType type, ServerStats stats) {
         String serverName = Bukkit.getServer().getName();
         String alertType = HealthChecker.alertTypeName(type);

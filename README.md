@@ -1,137 +1,105 @@
 # ServerDoctor Lite
 
-A lightweight Paper plugin that helps server owners monitor server health, spot warnings, and find lag-heavy loaded chunks.
+[![Version](https://img.shields.io/badge/version-0.9.0--BETA-blue)](CHANGELOG.md)
+[![Platform](https://img.shields.io/badge/platform-Paper%2026.1.x-orange)](docs/INSTALLATION.md)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**This is the Lite version.** It focuses on in-game commands, config files, and optional Discord alerts. Premium features such as a web dashboard, historical metrics, and AI diagnostics are planned separately and are **not** included in Lite.
+**ServerDoctor Lite** is a Paper plugin that helps Minecraft server owners monitor performance, spot warnings, find lag-heavy chunks, and share diagnostic reports with hosts or developers.
 
----
-
-## Requirements
-
-- **Paper** 26.1.x (or compatible Paper build)
-- **Java 25**
+**Current release:** `0.9.0-BETA` (public beta)
 
 ---
 
 ## Features
 
-- Quick server snapshot (`/doctor`)
-- Health report with configurable warnings (`/doctor report`)
-- TPS and MSPT monitoring
-- Automatic in-game alerts with cooldowns (`/doctor alerts`)
-- Optional Discord webhook alerts (`/doctor discord`)
-- Text report export (`/doctor export`)
-- Config reload (`/doctor reload`)
-- **Chunk Analyzer** — top heaviest loaded chunks (`/doctor chunks`)
-- Configurable messages with `&` color codes
-- Permission-based commands
+- Quick health snapshot and **GOOD / WARNING / CRITICAL** status
+- TPS, MSPT, memory, entity, and chunk monitoring
+- Chunk analyzer with optional click-to-teleport
+- Smart recommendations (advisory only)
+- Safe cleanup preview and confirm
+- Lag spike detection with optional Discord alerts
+- Full diagnostic `.txt` export for support tickets
+
+**Lite edition** — no web dashboard or automatic world editing. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ---
 
-## Commands
+## Requirements
 
-| Command | Description |
-|---------|-------------|
-| `/doctor` | Quick stats: players, memory, worlds, entities, TPS, MSPT |
-| `/doctor report` | Full health report with warnings |
-| `/doctor alerts` | Alert settings and live metric status |
-| `/doctor discord` | Discord webhook status (URL hidden) |
-| `/doctor export` | Save a `.txt` report to `plugins/ServerDoctor/reports/` |
-| `/doctor reload` | Reload `config.yml` |
-| `/doctor chunks` | Scan loaded chunks and show the heaviest ones |
-| `/doctor help` | Command list (filtered by permission) |
+- **Paper** 26.1.x
+- **Java** 25
 
 ---
 
-## Permissions
+## Quick start
 
-| Permission | Default | Access |
-|------------|---------|--------|
-| `serverdoctor.use` | `true` | `/doctor`, `/doctor help` |
-| `serverdoctor.report` | `op` | `/doctor report` |
-| `serverdoctor.alerts` | `op` | `/doctor alerts`, `/doctor discord`, receive chat alerts |
-| `serverdoctor.export` | `op` | `/doctor export` |
-| `serverdoctor.reload` | `op` | `/doctor reload` |
-| `serverdoctor.chunks` | `op` | `/doctor chunks` |
-
----
-
-## Configuration
-
-File location after first run: `plugins/ServerDoctor/config.yml`
-
-### Health thresholds
-
-- `memory-warning-percent`
-- `entity-warning-limit`
-- `loaded-chunk-warning-limit`
-- `tps-warning-threshold`
-- `mspt-warning-threshold`
-
-### Alerts
-
-- `alerts-enabled`
-- `alert-check-interval-seconds`
-
-### Discord (optional)
-
-- `discord-alerts-enabled`
-- `discord-webhook-url`
-- `discord-alert-title`
-
-### Chunk analyzer
-
-- `chunk-analyzer-enabled`
-- `chunk-analyzer-top-limit`
-- `chunk-warning-entity-limit`
-- `chunk-warning-dropped-item-limit`
-- `chunk-warning-hopper-limit`
-
-### Messages
-
-Customize chat text under `messages:` using `&` color codes. Use `/doctor reload` after edits.
-
----
-
-## Installation
-
-1. Build the plugin (see below) or download a release JAR when published.
-2. Place `ServerDoctor-0.2.0-SNAPSHOT.jar` in your server's `plugins/` folder.
+1. Download **`ServerDoctor-0.9.0-BETA.jar`** from [GitHub Releases](https://github.com/your-org/ServerDoctor/releases).
+2. Place it in your server's `plugins/` folder.
 3. Start or restart the server.
-4. Edit `plugins/ServerDoctor/config.yml` as needed.
-5. Run `/doctor reload` to apply changes without a full restart.
+4. Run `/doctor about` to verify the install.
+5. Run `/doctor reload` after editing `plugins/ServerDoctor/config.yml`.
 
 ---
 
-## Building from source
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Installation](docs/INSTALLATION.md) | Download, install, upgrade, build from source |
+| [Commands](docs/COMMANDS.md) | Full command reference |
+| [Permissions](docs/PERMISSIONS.md) | Permission nodes and staff setup |
+| [Configuration](docs/CONFIGURATION.md) | All `config.yml` options |
+| [Release packaging](docs/RELEASE.md) | How to publish JARs (GitHub / SpigotMC) |
+| [Changelog](CHANGELOG.md) | Version history |
+
+---
+
+## Common commands
+
+```text
+/doctor              Quick stats
+/doctor status       Overall health summary
+/doctor report       Full report + recommendations
+/doctor chunks       Heaviest loaded chunks
+/doctor export       Diagnostic .txt report
+/doctor help         Commands you can use
+```
+
+---
+
+## Build from source
 
 ```bash
 ./gradlew build
 ```
 
-Output JAR: `build/libs/ServerDoctor-0.2.0-SNAPSHOT.jar`
+Output: `build/libs/ServerDoctor-0.9.0-BETA.jar` (local build — attach to GitHub Releases, do not commit to Git)
 
 ---
 
-## Chunk analyzer note
+## SpigotMC description (short)
 
-`/doctor chunks` scans **all currently loaded chunks** on the main thread. On very large servers this may cause a brief lag spike. Run during low traffic or after identifying lag.
+Copy/paste starter text:
 
-This Lite version does **not** remove entities or chunks automatically.
+```text
+ServerDoctor Lite helps you monitor server health on Paper 26.1.x.
+Check TPS, MSPT, memory, entities, and loaded chunks with /doctor and /doctor status.
+Find lag-heavy chunks, export diagnostic reports for your host, and get optional Discord alerts.
+Safe cleanup tools let you preview entity removal before confirming.
+Beta build 0.9.0-BETA — Lite edition, MIT licensed.
+```
 
 ---
 
-## Lite vs Premium (planned)
+## License
 
-| Lite (this plugin) | Premium (planned separately) |
-|--------------------|------------------------------|
-| In-game commands | Web dashboard |
-| config.yml | Historical data |
-| Discord webhooks | AI diagnostics |
-| Chunk analyzer | Advanced automation |
+[MIT License](LICENSE) — Copyright (c) 2026 jimm
 
 ---
 
 ## Support
 
-For issues and updates, refer to your project repository or SpigotMC resource page when published.
+- **Issues:** GitHub Issues (update repository URL when published)
+- **Docs:** [docs/](docs/)
+
+Replace `your-org/ServerDoctor` with your real GitHub path before publishing.

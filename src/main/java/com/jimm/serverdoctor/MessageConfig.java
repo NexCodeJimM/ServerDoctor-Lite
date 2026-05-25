@@ -30,7 +30,7 @@ public final class MessageConfig {
         );
         reloadSuccess = config.getString(
                 "messages.reload-success",
-                "&aConfiguration reloaded. Alert checks restarted."
+                "&aConfiguration reloaded. All services restarted."
         );
         reportGenerated = config.getString(
                 "messages.report-generated",

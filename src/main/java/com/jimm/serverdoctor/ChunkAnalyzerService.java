@@ -21,9 +21,11 @@ import java.util.List;
 public final class ChunkAnalyzerService {
 
     private final PluginConfig pluginConfig;
+    private final RecommendationService recommendationService;
 
-    public ChunkAnalyzerService(PluginConfig pluginConfig) {
+    public ChunkAnalyzerService(PluginConfig pluginConfig, RecommendationService recommendationService) {
         this.pluginConfig = pluginConfig;
+        this.recommendationService = recommendationService;
     }
 
     /**
@@ -76,11 +78,12 @@ public final class ChunkAnalyzerService {
         }
 
         double score = calculateHeavinessScore(totalEntities, droppedItems, mobs, hoppers);
-        List<String> recommendations = buildRecommendations(
+        List<String> recommendations = recommendationService.forChunk(
                 totalEntities,
                 droppedItems,
                 mobs,
-                hoppers
+                hoppers,
+                pluginConfig
         );
 
         return new ChunkAnalysisResult(
@@ -118,28 +121,5 @@ public final class ChunkAnalyzerService {
         }
 
         return score;
-    }
-
-    private List<String> buildRecommendations(int totalEntities, int droppedItems, int mobs, int hoppers) {
-        List<String> tips = new ArrayList<>();
-
-        if (droppedItems >= pluginConfig.getChunkWarningDroppedItemLimit()) {
-            tips.add("Possible item buildup. Check farms, grinders, or item collection systems.");
-        }
-        if (mobs >= pluginConfig.getChunkWarningEntityLimit() / 2) {
-            tips.add("Possible mob farm or overcrowded area.");
-        }
-        if (hoppers >= pluginConfig.getChunkWarningHopperLimit()) {
-            tips.add("Possible storage or redstone-heavy system.");
-        }
-        if (totalEntities >= pluginConfig.getChunkWarningEntityLimit()) {
-            tips.add("Possible entity-heavy chunk.");
-        }
-
-        if (tips.isEmpty()) {
-            tips.add("Moderate load — monitor if lag continues.");
-        }
-
-        return tips;
     }
 }

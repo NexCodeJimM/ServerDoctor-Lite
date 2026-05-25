@@ -2,13 +2,17 @@ package com.jimm.serverdoctor;
 
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.OptionalLong;
 import java.util.logging.Level;
 
 public final class DoctorCommand implements BasicCommand {
@@ -18,18 +22,24 @@ public final class DoctorCommand implements BasicCommand {
     private final PluginConfig pluginConfig;
     private final AlertService alertService;
     private final ChunkAnalyzerService chunkAnalyzerService;
+    private final RecommendationService recommendationService;
+    private final LagSpikeDetectorService lagSpikeDetectorService;
 
     public DoctorCommand(
             ServerDoctorPlugin plugin,
             PluginConfig pluginConfig,
             AlertService alertService,
-            ChunkAnalyzerService chunkAnalyzerService
+            ChunkAnalyzerService chunkAnalyzerService,
+            RecommendationService recommendationService,
+            LagSpikeDetectorService lagSpikeDetectorService
     ) {
         this.plugin = plugin;
         this.pluginEnabledAtMillis = plugin.getEnabledAtMillis();
         this.pluginConfig = pluginConfig;
         this.alertService = alertService;
         this.chunkAnalyzerService = chunkAnalyzerService;
+        this.recommendationService = recommendationService;
+        this.lagSpikeDetectorService = lagSpikeDetectorService;
     }
 
     @Override
@@ -89,6 +99,43 @@ public final class DoctorCommand implements BasicCommand {
             return;
         }
 
+        if (subcommand.equalsIgnoreCase("tpchunk")) {
+            handleTpChunk(sender, args);
+            return;
+        }
+
+        if (subcommand.equalsIgnoreCase("cleanup")) {
+            handleCleanup(sender, args);
+            return;
+        }
+
+        if (subcommand.equalsIgnoreCase("spikes")) {
+            if (!Permissions.canSpikes(sender)) {
+                MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.SPIKES));
+                return;
+            }
+            sendSpikesStatus(sender);
+            return;
+        }
+
+        if (subcommand.equalsIgnoreCase("status")) {
+            if (!Permissions.canStatus(sender)) {
+                MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.STATUS));
+                return;
+            }
+            sendServerStatus(sender, ServerStats.collect(pluginEnabledAtMillis));
+            return;
+        }
+
+        if (subcommand.equalsIgnoreCase("about")) {
+            if (!Permissions.canAbout(sender)) {
+                MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.ABOUT));
+                return;
+            }
+            PluginAbout.sendAbout(sender, plugin);
+            return;
+        }
+
         if (subcommand.equalsIgnoreCase("help")) {
             if (!Permissions.canUse(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
@@ -99,18 +146,42 @@ public final class DoctorCommand implements BasicCommand {
         }
 
         MessageUtil.send(sender, MessageUtil.unknownCommand());
-        sendHelp(sender);
+        if (Permissions.canRunAnyDoctorCommand(sender)) {
+            sendHelp(sender);
+        }
     }
 
     @Override
     public Collection<String> suggest(CommandSourceStack source, String[] args) {
         CommandSender sender = source.getSender();
+
         if (args.length == 0 || args.length == 1) {
             String typed = args.length == 1 ? args[0].toLowerCase(Locale.ROOT) : "";
             return getPermittedSubcommands(sender).stream()
                     .filter(name -> name.startsWith(typed))
                     .toList();
         }
+
+        if (args.length >= 2 && args[0].equalsIgnoreCase("tpchunk") && Permissions.canTpChunk(sender)) {
+            if (args.length == 2) {
+                String typedWorld = args[1].toLowerCase(Locale.ROOT);
+                return Bukkit.getWorlds().stream()
+                        .map(World::getName)
+                        .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(typedWorld))
+                        .toList();
+            }
+        }
+
+        if (args.length >= 2 && args[0].equalsIgnoreCase("cleanup")
+                && (Permissions.canCleanupPreview(sender) || Permissions.canCleanupConfirm(sender))) {
+            if (args.length == 2) {
+                String typed = args[1].toLowerCase(Locale.ROOT);
+                return cleanupSubcommandSuggestions(sender).stream()
+                        .filter(option -> option.startsWith(typed))
+                        .toList();
+            }
+        }
+
         return List.of();
     }
 
@@ -123,8 +194,15 @@ public final class DoctorCommand implements BasicCommand {
         MessageUtil.sendHeader(sender, "Help");
         boolean anyCommandListed = false;
 
-        if (Permissions.canUse(sender)) {
+        if (Permissions.canAbout(sender)) {
             MessageUtil.sendSection(sender, "Commands");
+            MessageUtil.send(sender, MessageUtil.helpEntry("/doctor about", "Plugin version and information"));
+            anyCommandListed = true;
+        }
+        if (Permissions.canUse(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
             MessageUtil.send(sender, MessageUtil.helpEntry("/doctor", "Quick server stats"));
             anyCommandListed = true;
         }
@@ -164,17 +242,70 @@ public final class DoctorCommand implements BasicCommand {
             MessageUtil.send(sender, MessageUtil.helpEntry("/doctor chunks", "Find the heaviest loaded chunks"));
             anyCommandListed = true;
         }
+        if (Permissions.canTpChunk(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor tpchunk <world> <chunkX> <chunkZ>",
+                    "Teleport to the center of a chunk (also clickable in /doctor chunks)"
+            ));
+            anyCommandListed = true;
+        }
+        if (Permissions.canCleanupPreview(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor cleanup preview",
+                    "Preview entity counts — nothing is removed"
+            ));
+            anyCommandListed = true;
+        }
+        if (Permissions.canCleanupConfirm(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor cleanup confirm",
+                    "Remove configured entities from loaded worlds (run preview first)"
+            ));
+            anyCommandListed = true;
+        }
+        if (Permissions.canSpikes(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor spikes",
+                    "Lag spike detection status and latest spike summary"
+            ));
+            anyCommandListed = true;
+        }
+        if (Permissions.canStatus(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor status",
+                    "Quick overall server health summary (GOOD / WARNING / CRITICAL)"
+            ));
+            anyCommandListed = true;
+        }
         if (Permissions.canUse(sender)) {
             MessageUtil.send(sender, MessageUtil.helpEntry("/doctor help", "Show this help menu"));
         }
         if (!anyCommandListed) {
-            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
+            MessageUtil.send(sender, MessageUtil.error("&cYou do not have permission to use any /doctor commands."));
         }
         MessageUtil.sendFooter(sender);
     }
 
     private List<String> getPermittedSubcommands(CommandSender sender) {
         List<String> subcommands = new ArrayList<>();
+        if (Permissions.canAbout(sender)) {
+            subcommands.add("about");
+        }
         if (Permissions.canUse(sender)) {
             subcommands.add("help");
         }
@@ -194,7 +325,294 @@ public final class DoctorCommand implements BasicCommand {
         if (Permissions.canChunks(sender)) {
             subcommands.add("chunks");
         }
+        if (Permissions.canTpChunk(sender)) {
+            subcommands.add("tpchunk");
+        }
+        if (Permissions.canCleanupPreview(sender) || Permissions.canCleanupConfirm(sender)) {
+            subcommands.add("cleanup");
+        }
+        if (Permissions.canSpikes(sender)) {
+            subcommands.add("spikes");
+        }
+        if (Permissions.canStatus(sender)) {
+            subcommands.add("status");
+        }
         return subcommands;
+    }
+
+    private void sendServerStatus(CommandSender sender, ServerStats stats) {
+        ServerHealthStatus health = ServerHealthStatusService.evaluate(
+                stats,
+                pluginConfig,
+                plugin.getLagSpikeHistory(),
+                recommendationService
+        );
+
+        MessageUtil.sendHeader(sender, "Server Status");
+        MessageUtil.send(sender, MessageUtil.overallStatus(health.overall(), health.summaryMessage()));
+        MessageUtil.blank(sender);
+
+        MessageUtil.sendSection(sender, "Metrics");
+        sendStatusMetric(sender, "TPS", ServerStats.formatTps(stats.currentTps), health.tps());
+        sendStatusMetric(sender, "MSPT", ServerStats.formatMspt(stats.mspt), health.mspt());
+        sendStatusMetric(
+                sender,
+                "Memory",
+                String.format(Locale.ROOT, "%.1f%%", stats.memoryUsagePercent),
+                health.memory()
+        );
+        sendStatusMetric(sender, "Entities", String.format(Locale.ROOT, "%,d", stats.entityCount), health.entities());
+        sendStatusMetric(sender, "Loaded chunks", String.valueOf(stats.loadedChunkCount), health.chunks());
+        MessageUtil.blank(sender);
+
+        MessageUtil.sendSection(sender, "Lag spike");
+        MessageUtil.sendStat(sender, "Status", health.lagSpike().label(), health.lagSpike());
+        MessageUtil.sendStat(sender, "Latest", health.latestLagSpikeLine());
+        MessageUtil.blank(sender);
+
+        MessageUtil.sendSection(sender, "Recommendations");
+        if (pluginConfig.isRecommendationsEnabled()) {
+            MessageUtil.sendStat(sender, "Active tips", String.valueOf(health.recommendationCount()));
+            if (health.recommendationCount() > 0) {
+                MessageUtil.send(sender, MessageUtil.info("&7Run &f/doctor report &7to see full recommendations."));
+            }
+        } else {
+            MessageUtil.sendStat(sender, "Active tips", "disabled in config");
+        }
+
+        MessageUtil.sendFooter(sender);
+    }
+
+    private void sendStatusMetric(
+            CommandSender sender,
+            String label,
+            String value,
+            MessageUtil.StatusLevel level
+    ) {
+        MessageUtil.sendStat(sender, label, value, level);
+    }
+
+    private List<String> cleanupSubcommandSuggestions(CommandSender sender) {
+        List<String> options = new ArrayList<>();
+        if (Permissions.canCleanupPreview(sender)) {
+            options.add("preview");
+        }
+        if (Permissions.canCleanupConfirm(sender)) {
+            options.add("confirm");
+        }
+        return options;
+    }
+
+    private void handleCleanup(CommandSender sender, String[] args) {
+        if (!Permissions.canCleanupPreview(sender) && !Permissions.canCleanupConfirm(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.CLEANUP_PREVIEW));
+            return;
+        }
+
+        if (args.length < 2) {
+            MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor cleanup <preview|confirm>"));
+            return;
+        }
+
+        if (args[1].equalsIgnoreCase("preview")) {
+            handleCleanupPreview(sender);
+            return;
+        }
+
+        if (args[1].equalsIgnoreCase("confirm")) {
+            handleCleanupConfirm(sender);
+            return;
+        }
+
+        MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor cleanup <preview|confirm>"));
+    }
+
+    private void handleCleanupPreview(CommandSender sender) {
+        if (!Permissions.canCleanupPreview(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.CLEANUP_PREVIEW));
+            return;
+        }
+
+        if (!pluginConfig.getCleanup().isEnabled()) {
+            MessageUtil.send(sender, MessageUtil.error("&cCleanup is disabled in config.yml."));
+            return;
+        }
+
+        MessageUtil.send(sender, MessageUtil.info("&7Scanning loaded worlds on the main thread..."));
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!isSenderAvailable(sender)) {
+                return;
+            }
+            sendCleanupPreview(sender);
+        });
+    }
+
+    private void sendCleanupPreview(CommandSender sender) {
+        CleanupPreviewResult result = CleanupPreviewService.scanLoadedWorlds();
+        CleanupConfig cleanup = pluginConfig.getCleanup();
+        int eligibleToRemove = cleanup.countEligibleToRemove();
+
+        MessageUtil.sendHeader(sender, "Cleanup Preview");
+        MessageUtil.sendSection(sender, "Scan");
+        MessageUtil.sendStat(sender, "Worlds scanned", String.valueOf(result.worldsScanned()));
+        MessageUtil.blank(sender);
+
+        MessageUtil.sendSection(sender, "Entity counts (loaded worlds)");
+        MessageUtil.sendStat(sender, "Dropped items", String.valueOf(result.droppedItems()));
+        MessageUtil.sendStat(sender, "Hostile mobs", String.valueOf(result.hostileMobs()));
+        MessageUtil.sendStat(sender, "Passive mobs", String.valueOf(result.passiveMobs()));
+        MessageUtil.sendStat(sender, "Total living entities", String.valueOf(result.totalLivingEntities()));
+        MessageUtil.sendStat(sender, "Players (never removed)", String.valueOf(result.players()));
+        MessageUtil.blank(sender);
+
+        MessageUtil.sendSection(sender, "Cleanup config");
+        MessageUtil.sendStat(sender, "Include dropped items", yesNo(cleanup.isIncludeDroppedItems()));
+        MessageUtil.sendStat(sender, "Include hostile mobs", yesNo(cleanup.isIncludeHostileMobs()));
+        MessageUtil.sendStat(sender, "Include passive mobs", yesNo(cleanup.isIncludePassiveMobs()));
+        MessageUtil.sendStat(sender, "Eligible to remove (safe rules)", String.valueOf(eligibleToRemove));
+        sendLatestCleanupSummary(sender, cleanup);
+        MessageUtil.blank(sender);
+
+        MessageUtil.send(sender, MessageUtil.overallStatus(
+                MessageUtil.StatusLevel.GOOD,
+                "Preview only. No entities were removed."
+        ));
+        if (Permissions.canCleanupConfirm(sender)) {
+            MessageUtil.send(sender, MessageUtil.info("&7To execute cleanup, run &f/doctor cleanup confirm&7."));
+        }
+        MessageUtil.sendFooter(sender);
+    }
+
+    private void handleCleanupConfirm(CommandSender sender) {
+        if (!Permissions.canCleanupConfirm(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.CLEANUP_CONFIRM));
+            return;
+        }
+
+        if (!pluginConfig.getCleanup().isEnabled()) {
+            MessageUtil.send(sender, MessageUtil.error("&cCleanup is disabled in config.yml."));
+            return;
+        }
+
+        CleanupConfig cleanup = pluginConfig.getCleanup();
+        if (!CleanupExecuteService.hasAnyCategoryEnabled(cleanup)) {
+            MessageUtil.send(sender, MessageUtil.error("&cNo cleanup categories are enabled in config.yml."));
+            return;
+        }
+
+        OptionalLong cooldownRemaining = CleanupCooldownService.remainingSeconds(
+                plugin.getCleanupHistory(),
+                cleanup.getCooldownSeconds()
+        );
+        if (cooldownRemaining.isPresent()) {
+            MessageUtil.send(sender, MessageUtil.error(String.format(
+                    Locale.ROOT,
+                    "&cCleanup is on cooldown. Try again in &f%s&c.",
+                    CleanupCooldownService.formatRemaining(cooldownRemaining.getAsLong())
+            )));
+            return;
+        }
+
+        MessageUtil.sendHeader(sender, "Cleanup Confirm");
+        MessageUtil.send(sender, MessageUtil.overallStatus(
+                MessageUtil.StatusLevel.WARNING,
+                "This will remove configured entities from loaded worlds."
+        ));
+        MessageUtil.sendStat(sender, "Include dropped items", yesNo(cleanup.isIncludeDroppedItems()));
+        MessageUtil.sendStat(sender, "Include hostile mobs", yesNo(cleanup.isIncludeHostileMobs()));
+        MessageUtil.sendStat(sender, "Include passive mobs", yesNo(cleanup.isIncludePassiveMobs()));
+        MessageUtil.sendStat(sender, "Eligible to remove now", String.valueOf(cleanup.countEligibleToRemove()));
+        MessageUtil.send(sender, MessageUtil.info("&7Protected: players, named, tamed, villagers, armor stands, frames, vehicles, bosses."));
+        MessageUtil.send(sender, MessageUtil.info("&7Running cleanup on the main thread..."));
+
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!isSenderAvailable(sender)) {
+                return;
+            }
+            runCleanupConfirm(sender);
+        });
+    }
+
+    private void runCleanupConfirm(CommandSender sender) {
+        CleanupConfig cleanup = pluginConfig.getCleanup();
+
+        OptionalLong cooldownRemaining = CleanupCooldownService.remainingSeconds(
+                plugin.getCleanupHistory(),
+                cleanup.getCooldownSeconds()
+        );
+        if (cooldownRemaining.isPresent()) {
+            MessageUtil.send(sender, MessageUtil.error(String.format(
+                    Locale.ROOT,
+                    "&cCleanup is on cooldown. Try again in &f%s&c.",
+                    CleanupCooldownService.formatRemaining(cooldownRemaining.getAsLong())
+            )));
+            MessageUtil.sendFooter(sender);
+            return;
+        }
+
+        CleanupExecuteResult result = CleanupExecuteService.execute(cleanup, sender.getName());
+        plugin.getCleanupHistory().record(result);
+
+        if (cleanup.isLogActions()) {
+            CleanupActionLogger.log(plugin, result);
+        }
+
+        MessageUtil.sendSection(sender, "Results");
+        MessageUtil.sendStat(sender, "Dropped items removed", String.valueOf(result.droppedItemsRemoved()));
+        MessageUtil.sendStat(sender, "Hostile mobs removed", String.valueOf(result.hostileMobsRemoved()));
+        MessageUtil.sendStat(sender, "Passive mobs removed", String.valueOf(result.passiveMobsRemoved()));
+        MessageUtil.sendStat(sender, "Total removed", String.valueOf(result.totalRemoved()));
+        MessageUtil.blank(sender);
+
+        MessageUtil.StatusLevel level = result.totalRemoved() > 0
+                ? MessageUtil.StatusLevel.GOOD
+                : MessageUtil.StatusLevel.WARNING;
+        MessageUtil.send(sender, MessageUtil.overallStatus(
+                level,
+                result.totalRemoved() > 0
+                        ? "Cleanup finished."
+                        : "No entities matched cleanup rules."
+        ));
+        MessageUtil.sendFooter(sender);
+    }
+
+    private void sendLatestCleanupSummary(CommandSender sender, CleanupConfig cleanup) {
+        if (!plugin.getCleanupHistory().hasLastResult()) {
+            return;
+        }
+
+        CleanupExecuteResult last = plugin.getCleanupHistory().getLastResult();
+        MessageUtil.blank(sender);
+        MessageUtil.sendSection(sender, "Latest cleanup");
+        MessageUtil.sendStat(sender, "When", last.formattedExecutedAt());
+        MessageUtil.sendStat(sender, "Executor", last.executedBy());
+        MessageUtil.sendStat(sender, "Worlds scanned", String.valueOf(last.worldsScanned()));
+        MessageUtil.sendStat(sender, "Total removed", String.valueOf(last.totalRemoved()));
+
+        OptionalLong cooldownRemaining = CleanupCooldownService.remainingSeconds(
+                plugin.getCleanupHistory(),
+                cleanup.getCooldownSeconds()
+        );
+        if (cooldownRemaining.isPresent()) {
+            MessageUtil.sendStat(
+                    sender,
+                    "Confirm cooldown",
+                    CleanupCooldownService.formatRemaining(cooldownRemaining.getAsLong()) + " remaining"
+            );
+        } else {
+            MessageUtil.sendStat(sender, "Confirm cooldown", "ready");
+        }
+    }
+
+    private static String yesNo(boolean value) {
+        return value ? "yes" : "no";
+    }
+
+    private static boolean isSenderAvailable(CommandSender sender) {
+        if (sender instanceof Player player) {
+            return player.isOnline();
+        }
+        return true;
     }
 
     private void handleChunks(CommandSender sender) {
@@ -210,7 +628,12 @@ public final class DoctorCommand implements BasicCommand {
 
         MessageUtil.send(sender, MessageUtil.info("&7Scanning loaded chunks on the main thread..."));
 
-        plugin.getServer().getScheduler().runTask(plugin, () -> runChunkAnalysis(sender));
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!isSenderAvailable(sender)) {
+                return;
+            }
+            runChunkAnalysis(sender);
+        });
     }
 
     private void runChunkAnalysis(CommandSender sender) {
@@ -230,22 +653,101 @@ public final class DoctorCommand implements BasicCommand {
 
         int rank = 1;
         for (ChunkAnalysisResult result : topResults) {
-            MessageUtil.sendSection(sender, "#" + rank + " — " + result.worldName + " [" + result.chunkCoordinates() + "]");
+            sendChunkRankHeader(sender, rank, result);
             MessageUtil.sendStat(sender, "Heaviness score", String.format("%.2f", result.heavinessScore));
             MessageUtil.sendStat(sender, "Total entities", String.valueOf(result.totalEntities));
             MessageUtil.sendStat(sender, "Dropped items", String.valueOf(result.droppedItems));
             MessageUtil.sendStat(sender, "Mobs", String.valueOf(result.mobs));
             MessageUtil.sendStat(sender, "Tile entities", String.valueOf(result.tileEntities));
             MessageUtil.sendStat(sender, "Hoppers", String.valueOf(result.hoppers));
-            MessageUtil.send(sender, MessageUtil.section("Recommendations"));
-            for (String tip : result.getRecommendations()) {
-                MessageUtil.send(sender, MessageUtil.warningBullet(tip));
-            }
+            sendChunkRecommendations(sender, result);
             MessageUtil.blank(sender);
             rank++;
         }
 
+        sendChunksOverviewRecommendations(sender, topResults);
         MessageUtil.sendFooter(sender);
+    }
+
+    private void sendChunkRankHeader(CommandSender sender, int rank, ChunkAnalysisResult result) {
+        boolean clickable = pluginConfig.isChunkTeleportEnabled()
+                && Permissions.canTpChunk(sender)
+                && sender instanceof Player;
+        MessageUtil.send(sender, MessageUtil.chunkRankHeader(rank, result, clickable));
+    }
+
+    private void handleTpChunk(CommandSender sender, String[] args) {
+        if (!Permissions.canTpChunk(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.TPCHUNK));
+            return;
+        }
+
+        if (!pluginConfig.isChunkTeleportEnabled()) {
+            MessageUtil.send(sender, MessageUtil.error("&cChunk teleport is disabled in config.yml."));
+            return;
+        }
+
+        if (!(sender instanceof Player player)) {
+            MessageUtil.send(sender, MessageUtil.error("&cOnly players can teleport to chunks."));
+            return;
+        }
+
+        if (args.length < 4) {
+            MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor tpchunk <world> <chunkX> <chunkZ>"));
+            return;
+        }
+
+        String worldName = ChunkTeleportService.normalizeWorldName(args[1]);
+        int chunkX;
+        int chunkZ;
+        try {
+            chunkX = Integer.parseInt(args[2]);
+            chunkZ = Integer.parseInt(args[3]);
+        } catch (NumberFormatException exception) {
+            MessageUtil.send(sender, MessageUtil.error("&cChunk coordinates must be whole numbers."));
+            return;
+        }
+
+        ChunkTeleportService.TeleportResult result = ChunkTeleportService.teleportToChunk(player, worldName, chunkX, chunkZ);
+        if (result.success()) {
+            MessageUtil.send(sender, MessageUtil.info(String.format(
+                    Locale.ROOT,
+                    "&aTeleported to &f%s &achunk [&f%d, %d&a] (&f%d, %d, %d&a).",
+                    result.worldName(),
+                    result.chunkX(),
+                    result.chunkZ(),
+                    result.blockX(),
+                    result.y(),
+                    result.blockZ()
+            )));
+        } else {
+            MessageUtil.send(sender, MessageUtil.error("&c" + result.message()));
+        }
+    }
+
+    private void sendChunkRecommendations(CommandSender sender, ChunkAnalysisResult result) {
+        if (!pluginConfig.isRecommendationsEnabled()) {
+            return;
+        }
+        List<String> tips = result.getRecommendations();
+        if (tips.isEmpty()) {
+            return;
+        }
+        MessageUtil.sendSection(sender, "Recommendations");
+        for (String tip : tips) {
+            MessageUtil.send(sender, MessageUtil.recommendationBullet(tip));
+        }
+    }
+
+    private void sendChunksOverviewRecommendations(CommandSender sender, List<ChunkAnalysisResult> topResults) {
+        List<String> overview = recommendationService.forChunksOverview(topResults, pluginConfig);
+        if (overview.isEmpty()) {
+            return;
+        }
+        MessageUtil.sendSection(sender, "Suggestions");
+        for (String tip : overview) {
+            MessageUtil.send(sender, MessageUtil.recommendationBullet(tip));
+        }
     }
 
     private void handleExport(CommandSender sender) {
@@ -253,19 +755,28 @@ public final class DoctorCommand implements BasicCommand {
             MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.EXPORT));
             return;
         }
-        try {
-            String filename = ReportExporter.export(
-                    plugin,
-                    ServerStats.collect(pluginEnabledAtMillis),
-                    pluginConfig
-            );
-            MessageUtil.sendHeader(sender, "Export");
-            MessageUtil.send(sender, MessageUtil.reportGenerated(filename));
-            MessageUtil.sendFooter(sender);
-        } catch (IOException exception) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to export ServerDoctor report", exception);
-            MessageUtil.send(sender, MessageUtil.error("&cFailed to generate report. Check the server console for details."));
-        }
+
+        MessageUtil.send(sender, MessageUtil.info("&7Generating diagnostic report (read-only, no cleanup)..."));
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!isSenderAvailable(sender)) {
+                return;
+            }
+            try {
+                String filename = ReportExporter.export(
+                        plugin,
+                        ServerStats.collect(pluginEnabledAtMillis),
+                        pluginConfig,
+                        recommendationService,
+                        chunkAnalyzerService
+                );
+                MessageUtil.sendHeader(sender, "Export");
+                MessageUtil.send(sender, MessageUtil.reportGenerated(filename));
+                MessageUtil.sendFooter(sender);
+            } catch (IOException exception) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to export ServerDoctor report", exception);
+                MessageUtil.send(sender, MessageUtil.error("&cFailed to generate report. Check the server console for details."));
+            }
+        });
     }
 
     private void handleReload(CommandSender sender) {
@@ -275,7 +786,54 @@ public final class DoctorCommand implements BasicCommand {
         }
         pluginConfig.load();
         alertService.start();
+        lagSpikeDetectorService.start();
         MessageUtil.send(sender, MessageUtil.reloadSuccess());
+    }
+
+    private void sendSpikesStatus(CommandSender sender) {
+        LagSpikeConfig lagSpike = pluginConfig.getLagSpike();
+        LagSpikeHistory history = lagSpikeDetectorService.getHistory();
+
+        MessageUtil.sendHeader(sender, "Lag Spike Detection");
+        MessageUtil.sendSection(sender, "Settings");
+        MessageUtil.sendStat(sender, "Detection enabled", yesNo(lagSpike.isEnabled()));
+        MessageUtil.sendStat(sender, "Check interval", lagSpike.getCheckIntervalSeconds() + " seconds");
+        MessageUtil.sendStat(sender, "TPS drop threshold", String.format(Locale.ROOT, "%.1f", lagSpike.getTpsDropThreshold()));
+        MessageUtil.sendStat(sender, "MSPT spike threshold", String.format(Locale.ROOT, "%.1f ms", lagSpike.getMsptSpikeThreshold()));
+        MessageUtil.sendStat(sender, "Alert cooldown", lagSpike.getAlertCooldownSeconds() + " seconds");
+        MessageUtil.sendStat(sender, "Log spikes", yesNo(lagSpike.isLogSpikes()));
+        MessageUtil.sendStat(sender, "Alert permission", Permissions.ALERTS);
+        MessageUtil.blank(sender);
+
+        OptionalLong cooldownRemaining = history.remainingCooldownSeconds(lagSpike.getAlertCooldownSeconds());
+        MessageUtil.sendSection(sender, "Alert cooldown status");
+        if (cooldownRemaining.isPresent()) {
+            MessageUtil.sendStat(
+                    sender,
+                    "Next alert allowed in",
+                    CleanupCooldownService.formatRemaining(cooldownRemaining.getAsLong())
+            );
+        } else {
+            MessageUtil.sendStat(sender, "Next alert", "ready");
+        }
+        MessageUtil.blank(sender);
+
+        if (history.hasLatestSpike()) {
+            LagSpikeEvent latest = history.getLatestSpike();
+            MessageUtil.sendSection(sender, "Latest spike");
+            MessageUtil.sendStat(sender, "Detected at", latest.formattedDetectedAt());
+            MessageUtil.sendStat(sender, "Trigger", latest.triggerSummary());
+            MessageUtil.sendStat(sender, "TPS", ServerStats.formatTps(latest.tps()));
+            MessageUtil.sendStat(sender, "MSPT", ServerStats.formatMspt(latest.mspt()));
+            MessageUtil.sendStat(sender, "Memory", String.format(Locale.ROOT, "%.1f%%", latest.memoryUsagePercent()));
+            MessageUtil.sendStat(sender, "Entities", String.format(Locale.ROOT, "%,d", latest.entityCount()));
+            MessageUtil.sendStat(sender, "Loaded chunks", String.valueOf(latest.loadedChunkCount()));
+        } else {
+            MessageUtil.sendSection(sender, "Latest spike");
+            MessageUtil.send(sender, MessageUtil.info("&7No lag spikes detected since server start."));
+        }
+
+        MessageUtil.sendFooter(sender);
     }
 
     private void sendDiscordStatus(CommandSender sender) {
@@ -291,7 +849,7 @@ public final class DoctorCommand implements BasicCommand {
         MessageUtil.blank(sender);
 
         if (pluginConfig.shouldSendDiscordAlerts()) {
-            MessageUtil.send(sender, MessageUtil.info("&7Discord will receive alerts when in-game alerts fire (same cooldown)."));
+            MessageUtil.send(sender, MessageUtil.info("&7Discord will receive health and lag spike alerts (webhook URL is never shown in chat)."));
         } else if (pluginConfig.isDiscordAlertsEnabled()) {
             MessageUtil.send(sender, MessageUtil.error("&cDiscord is enabled but webhook URL is empty. Add a URL in config.yml."));
         } else {
@@ -365,7 +923,8 @@ public final class DoctorCommand implements BasicCommand {
         MessageUtil.sendStat(sender, "Entities", String.valueOf(stats.entityCount));
         MessageUtil.sendStat(sender, "TPS", ServerStats.formatTps(stats.currentTps));
         MessageUtil.sendStat(sender, "MSPT", ServerStats.formatMspt(stats.mspt));
-        MessageUtil.sendStat(sender, "Plugin uptime", stats.uptime);
+        MessageUtil.sendStat(sender, "ServerDoctor uptime", stats.uptime);
+        MessageUtil.sendStat(sender, "ServerDoctor version", PluginAbout.version(plugin));
         MessageUtil.sendFooter(sender);
     }
 
@@ -409,7 +968,44 @@ public final class DoctorCommand implements BasicCommand {
                 MessageUtil.send(sender, MessageUtil.warningBullet(warning));
             }
         }
+        sendLatestLagSpikeMention(sender);
+        sendHealthRecommendations(sender, stats);
         MessageUtil.sendFooter(sender);
+    }
+
+    private void sendLatestLagSpikeMention(CommandSender sender) {
+        LagSpikeHistory history = lagSpikeDetectorService.getHistory();
+        if (!history.hasLatestSpike()) {
+            return;
+        }
+
+        LagSpikeEvent latest = history.getLatestSpike();
+        MessageUtil.blank(sender);
+        MessageUtil.sendSection(sender, "Latest lag spike");
+        MessageUtil.send(sender, MessageUtil.warningBullet(String.format(
+                Locale.ROOT,
+                "Detected at %s (%s) — TPS %s, MSPT %s, memory %.1f%%, %,d entities, %,d chunks. Use &f/doctor spikes &efor details.",
+                latest.formattedDetectedAt(),
+                latest.triggerSummary(),
+                ServerStats.formatTps(latest.tps()),
+                ServerStats.formatMspt(latest.mspt()),
+                latest.memoryUsagePercent(),
+                latest.entityCount(),
+                latest.loadedChunkCount()
+        )));
+    }
+
+    private void sendHealthRecommendations(CommandSender sender, ServerStats stats) {
+        List<String> tips = recommendationService.forHealthReport(stats, pluginConfig);
+        if (tips.isEmpty()) {
+            return;
+        }
+        MessageUtil.blank(sender);
+        MessageUtil.sendSection(sender, "Recommendations");
+        MessageUtil.send(sender, MessageUtil.info("&7Advisory only — review in-game before changing builds."));
+        for (String tip : tips) {
+            MessageUtil.send(sender, MessageUtil.recommendationBullet(tip));
+        }
     }
 
     private List<String> buildWarnings(ServerStats stats) {

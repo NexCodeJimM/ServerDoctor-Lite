@@ -6,6 +6,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.9.1-BETA] - 2026-05-23
+
+### Added
+
+- **Lite Plugin Impact Scanner** — `/doctor plugins` lists installed plugins, stack category, approximate task/listener counts, Paper timings detection, and advisory “worth reviewing” notes
+- Config section `plugin-impact-scanner:` with thresholds and plugin list toggle
+- Permission `serverdoctor.plugins` (default: op)
+- Smart recommendations on `/doctor plugins` (e.g. enable Paper timings for deeper profiling)
+- **Historical performance tracking** — periodic lightweight snapshots (TPS, MSPT, memory, chunks, entities)
+- **`/doctor history`**, **`/doctor history spikes`**, **`/doctor history performance`** — in-memory trends and optional CSV logs in `plugins/ServerDoctor/history/`
+- Config section `history:` and permissions `serverdoctor.history`, `.history.spikes`, `.history.performance`
+- **Scheduled diagnostic reports** — automatic health summaries on a timer (default: every 24 hours, disabled by default)
+- **`/doctor schedule`** — view enabled status, interval, next run, and last report file
+- Reports saved to `plugins/ServerDoctor/scheduled-reports/`; optional short Discord summary (not the full file)
+- Config section `scheduled-reports:` and permission `serverdoctor.schedule`
+- **Multi-version support** — targets Spigot/Paper `api-version: 1.21` through 26.1.x (Java 21 bytecode)
+
+---
+
 ## [0.9.0-BETA] - Public beta
 
 First public beta release of **ServerDoctor Lite** for Paper 26.1.x.
@@ -77,6 +96,7 @@ Pre-beta development builds (superseded by `0.9.0-BETA`).
 
 ---
 
+[0.9.1-BETA]: #
 [0.9.0-BETA]: #
 [0.2.0]: #
 [0.1.0]: #

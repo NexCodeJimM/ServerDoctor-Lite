@@ -1,9 +1,15 @@
 name: ServerDoctor
-version: '0.9.0-BETA'
+version: '0.9.1-BETA'
 main: com.jimm.serverdoctor.ServerDoctorPlugin
 description: ServerDoctor Lite - server health reports and chunk analysis
 author: jimm
-api-version: '26.1.2'
+api-version: '1.21'
+
+commands:
+  doctor:
+    description: ServerDoctor diagnostic and health commands
+    usage: /doctor [subcommand]
+    aliases: []
 
 permissions:
   serverdoctor.use:
@@ -47,4 +53,19 @@ permissions:
     default: op
   serverdoctor.update.check:
     description: Use /doctor update check to manually check SpigotMC for updates
+    default: op
+  serverdoctor.plugins:
+    description: Use /doctor plugins to scan installed plugins for possible performance review areas
+    default: op
+  serverdoctor.history:
+    description: Use /doctor history for performance history overview and trends
+    default: op
+  serverdoctor.history.spikes:
+    description: Use /doctor history spikes to view recent lag spike history
+    default: op
+  serverdoctor.history.performance:
+    description: Use /doctor history performance for rolling performance averages and trends
+    default: op
+  serverdoctor.schedule:
+    description: Use /doctor schedule to view scheduled diagnostic report settings
     default: op

@@ -1,17 +1,27 @@
 package com.jimm.serverdoctor;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.OptionalLong;
 
 /**
- * Stores the latest detected lag spike and alert cooldown state.
+ * Stores lag spike events and alert cooldown state.
  */
 public final class LagSpikeHistory {
 
+    private static final int MAX_RECENT_SPIKES = 50;
+
     private LagSpikeEvent latestSpike;
     private long lastAlertSentAtMillis;
+    private final List<LagSpikeEvent> recentSpikes = new ArrayList<>();
 
     public void recordLatest(LagSpikeEvent event) {
         this.latestSpike = event;
+        recentSpikes.add(event);
+        while (recentSpikes.size() > MAX_RECENT_SPIKES) {
+            recentSpikes.removeFirst();
+        }
     }
 
     public LagSpikeEvent getLatestSpike() {
@@ -20,6 +30,14 @@ public final class LagSpikeHistory {
 
     public boolean hasLatestSpike() {
         return latestSpike != null;
+    }
+
+    public List<LagSpikeEvent> getRecentSpikes() {
+        return Collections.unmodifiableList(new ArrayList<>(recentSpikes));
+    }
+
+    public int getRecentSpikeCount() {
+        return recentSpikes.size();
     }
 
     public boolean shouldSendAlert(int cooldownSeconds) {

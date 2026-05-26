@@ -22,6 +22,11 @@ ServerDoctor Lite uses one permission node per feature. Defaults are suitable fo
 | `serverdoctor.spikes` | `op` | `/doctor spikes` |
 | `serverdoctor.update.notify` | `op` | `/doctor update`, receive SpigotMC update notifications on join |
 | `serverdoctor.update.check` | `op` | `/doctor update check` (manual SpigotMC version check) |
+| `serverdoctor.plugins` | `op` | `/doctor plugins` (plugin impact scanner) |
+| `serverdoctor.history` | `op` | `/doctor history` (performance history overview) |
+| `serverdoctor.history.spikes` | `op` | `/doctor history spikes` |
+| `serverdoctor.history.performance` | `op` | `/doctor history performance` |
+| `serverdoctor.schedule` | `op` | `/doctor schedule` (scheduled diagnostic report status) |
 
 ---
 

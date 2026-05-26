@@ -47,14 +47,6 @@ public final class UpdateCheckerService implements Listener {
         if (!config.isEnabled()) {
             return;
         }
-        if (!config.isConfigured()) {
-            plugin.getLogger().warning(
-                    "Update checker is enabled but update-checker.spigot-resource-id is 0 — "
-                            + "not configured yet. Set it to your SpigotMC resource ID (ServerDoctor: "
-                            + UpdateCheckerConfig.DEFAULT_RESOURCE_ID + ")."
-            );
-            return;
-        }
         if (config.isCheckOnStartup()) {
             runCheckAsync(false, null);
         }
@@ -78,11 +70,11 @@ public final class UpdateCheckerService implements Listener {
 
     public void runCheckAsync(boolean manual, CommandSender notifySender) {
         UpdateCheckerConfig config = pluginConfig.getUpdateChecker();
-        if (!config.isEnabled() || !config.isConfigured()) {
+        if (!config.isEnabled()) {
             if (manual && notifySender != null) {
                 Bukkit.getScheduler().runTask(plugin, () ->
                         MessageUtil.send(notifySender, MessageUtil.error(
-                                "&cUpdate checker is not configured. Set &fupdate-checker.spigot-resource-id &cin config.yml."
+                                "&cUpdate checker is disabled in config.yml."
                         ))
                 );
             }
@@ -194,17 +186,6 @@ public final class UpdateCheckerService implements Listener {
 
         if (!config.isEnabled()) {
             MessageUtil.sendStat(sender, "Checker", "disabled in config");
-            MessageUtil.sendFooter(sender);
-            return;
-        }
-
-        if (!config.isConfigured()) {
-            MessageUtil.sendStat(sender, "Checker", "not configured (resource ID is 0)");
-            MessageUtil.send(sender, MessageUtil.info(
-                    "&7Set &fupdate-checker.spigot-resource-id &7to &f"
-                            + UpdateCheckerConfig.DEFAULT_RESOURCE_ID
-                            + " &7in config.yml, then &f/doctor reload&7."
-            ));
             MessageUtil.sendFooter(sender);
             return;
         }

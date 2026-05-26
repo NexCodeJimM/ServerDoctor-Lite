@@ -16,7 +16,8 @@ import java.util.List;
  */
 public final class ReportExporter {
 
-    private static final String REPORT_TITLE = "ServerDoctor Lite — Diagnostic Report";
+    private static final String DIAGNOSTIC_TITLE = "ServerDoctor Lite — Diagnostic Report";
+    private static final String SCHEDULED_TITLE = "ServerDoctor Lite — Scheduled Diagnostic Report";
     private static final DateTimeFormatter FILE_NAME_TIME =
             DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss");
     private static final DateTimeFormatter REPORT_TIME =
@@ -32,19 +33,70 @@ public final class ReportExporter {
             RecommendationService recommendationService,
             ChunkAnalyzerService chunkAnalyzerService
     ) throws IOException {
+        return writeReport(
+                plugin,
+                new File(plugin.getDataFolder(), "reports"),
+                "serverdoctor-diagnostic-",
+                DIAGNOSTIC_TITLE,
+                stats,
+                config,
+                recommendationService,
+                chunkAnalyzerService
+        );
+    }
+
+    public static String exportScheduled(
+            ServerDoctorPlugin plugin,
+            ServerStats stats,
+            PluginConfig config,
+            RecommendationService recommendationService,
+            ChunkAnalyzerService chunkAnalyzerService
+    ) throws IOException {
+        return writeReport(
+                plugin,
+                new File(plugin.getDataFolder(), "scheduled-reports"),
+                "serverdoctor-scheduled-",
+                SCHEDULED_TITLE,
+                stats,
+                config,
+                recommendationService,
+                chunkAnalyzerService
+        );
+    }
+
+    private static String writeReport(
+            ServerDoctorPlugin plugin,
+            File folder,
+            String filenamePrefix,
+            String reportTitle,
+            ServerStats stats,
+            PluginConfig config,
+            RecommendationService recommendationService,
+            ChunkAnalyzerService chunkAnalyzerService
+    ) throws IOException {
         PluginDataFolders.ensureReady(plugin);
-        File reportsFolder = new File(plugin.getDataFolder(), "reports");
+        if (!folder.exists() && !folder.mkdirs()) {
+            throw new IOException("Could not create report folder: " + folder.getAbsolutePath());
+        }
 
-        String filename = "serverdoctor-diagnostic-" + LocalDateTime.now().format(FILE_NAME_TIME) + ".txt";
-        File reportFile = new File(reportsFolder, filename);
+        String filename = filenamePrefix + LocalDateTime.now().format(FILE_NAME_TIME) + ".txt";
+        File reportFile = new File(folder, filename);
 
-        String content = buildReportText(plugin, stats, config, recommendationService, chunkAnalyzerService);
+        String content = buildReportText(
+                reportTitle,
+                plugin,
+                stats,
+                config,
+                recommendationService,
+                chunkAnalyzerService
+        );
         Files.writeString(reportFile.toPath(), content, StandardCharsets.UTF_8);
 
         return filename;
     }
 
     private static String buildReportText(
+            String reportTitle,
             ServerDoctorPlugin plugin,
             ServerStats stats,
             PluginConfig config,
@@ -53,7 +105,7 @@ public final class ReportExporter {
     ) {
         StringBuilder report = new StringBuilder();
 
-        appendReportHeader(report);
+        appendReportHeader(report, reportTitle);
         appendServerInformation(report, plugin);
         appendPerformanceSummary(report, stats);
         appendEntityAndChunkSummary(report, stats);
@@ -70,8 +122,8 @@ public final class ReportExporter {
         return report.toString();
     }
 
-    private static void appendReportHeader(StringBuilder report) {
-        report.append(REPORT_TITLE).append(System.lineSeparator());
+    private static void appendReportHeader(StringBuilder report, String reportTitle) {
+        report.append(reportTitle).append(System.lineSeparator());
         report.append("Generated: ").append(LocalDateTime.now().format(REPORT_TIME)).append(System.lineSeparator());
         report.append("Read-only export — no cleanup was run and no world changes were made.")
                 .append(System.lineSeparator());
@@ -81,11 +133,11 @@ public final class ReportExporter {
         appendSection(report, "Server Information");
         report.append("Server version: ").append(Bukkit.getVersion()).append(System.lineSeparator());
         report.append("Bukkit version: ").append(Bukkit.getBukkitVersion()).append(System.lineSeparator());
-        report.append("Minecraft version: ").append(Bukkit.getMinecraftVersion()).append(System.lineSeparator());
+        report.append("Minecraft version: ").append(SpigotApiCompat.minecraftVersion()).append(System.lineSeparator());
         report.append("Paper / server implementation: ").append(Bukkit.getName()).append(System.lineSeparator());
         report.append("Java version: ").append(System.getProperty("java.version")).append(System.lineSeparator());
         report.append("ServerDoctor: ").append(PluginAbout.PLUGIN_NAME).append(" ").append(PluginAbout.EDITION)
-                .append(" ").append(plugin.getPluginMeta().getVersion()).append(System.lineSeparator());
+                .append(" ").append(SpigotApiCompat.pluginVersion(plugin)).append(System.lineSeparator());
         report.append("Server name: ").append(Bukkit.getServer().getName()).append(System.lineSeparator());
     }
 

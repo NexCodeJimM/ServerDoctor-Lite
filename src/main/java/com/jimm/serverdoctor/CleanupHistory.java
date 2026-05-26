@@ -1,14 +1,16 @@
 package com.jimm.serverdoctor;
 
 /**
- * Stores the most recent cleanup result for export and admin reference.
+ * Stores cleanup results and session counts for export and history commands.
  */
 public final class CleanupHistory {
 
     private CleanupExecuteResult lastResult;
+    private int cleanupCount;
 
     public void record(CleanupExecuteResult result) {
         this.lastResult = result;
+        cleanupCount++;
     }
 
     public CleanupExecuteResult getLastResult() {
@@ -17,5 +19,9 @@ public final class CleanupHistory {
 
     public boolean hasLastResult() {
         return lastResult != null;
+    }
+
+    public int getCleanupCount() {
+        return cleanupCount;
     }
 }

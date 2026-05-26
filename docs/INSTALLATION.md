@@ -1,6 +1,6 @@
 # Installation
 
-ServerDoctor Lite **0.9.0-BETA** for **Paper 26.1.x** and **Java 25**.
+ServerDoctor Lite **0.9.1-BETA** for **Spigot/Paper 1.21.x through 26.1.x**.
 
 ---
 
@@ -8,10 +8,10 @@ ServerDoctor Lite **0.9.0-BETA** for **Paper 26.1.x** and **Java 25**.
 
 | Requirement | Version |
 |-------------|---------|
-| Server software | Paper 26.1.x (or compatible Paper build) |
-| Java | 25 |
+| Server software | Spigot or Paper **1.21.x** through **26.1.x** |
+| Java | **21+** (use **Java 25** on Minecraft 26.1 servers) |
 
-Other server forks are not officially supported for this beta.
+Paper is supported and recommended for timings and richer chat features. Other forks are not officially tested.
 
 ---
 

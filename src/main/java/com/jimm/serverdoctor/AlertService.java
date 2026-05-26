@@ -92,7 +92,7 @@ public final class AlertService {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (Permissions.canAlerts(player)) {
-                player.sendMessage(message);
+                AdventureMessages.send(player, message);
             }
         }
     }

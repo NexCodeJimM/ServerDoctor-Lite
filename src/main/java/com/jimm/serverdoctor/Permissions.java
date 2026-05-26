@@ -18,6 +18,11 @@ public final class Permissions {
     public static final String ABOUT = "serverdoctor.about";
     public static final String UPDATE_NOTIFY = "serverdoctor.update.notify";
     public static final String UPDATE_CHECK = "serverdoctor.update.check";
+    public static final String PLUGINS = "serverdoctor.plugins";
+    public static final String HISTORY = "serverdoctor.history";
+    public static final String HISTORY_SPIKES = "serverdoctor.history.spikes";
+    public static final String HISTORY_PERFORMANCE = "serverdoctor.history.performance";
+    public static final String SCHEDULE = "serverdoctor.schedule";
 
     private Permissions() {
     }
@@ -78,11 +83,32 @@ public final class Permissions {
         return sender.hasPermission(UPDATE_CHECK);
     }
 
+    public static boolean canPlugins(CommandSender sender) {
+        return sender.hasPermission(PLUGINS);
+    }
+
+    public static boolean canHistory(CommandSender sender) {
+        return sender.hasPermission(HISTORY);
+    }
+
+    public static boolean canHistorySpikes(CommandSender sender) {
+        return sender.hasPermission(HISTORY_SPIKES);
+    }
+
+    public static boolean canHistoryPerformance(CommandSender sender) {
+        return sender.hasPermission(HISTORY_PERFORMANCE);
+    }
+
+    public static boolean canSchedule(CommandSender sender) {
+        return sender.hasPermission(SCHEDULE);
+    }
+
     public static boolean canRunAnyDoctorCommand(CommandSender sender) {
         return canUse(sender) || canReport(sender) || canAlerts(sender)
                 || canExport(sender) || canReload(sender) || canChunks(sender) || canTpChunk(sender)
                 || canCleanupPreview(sender) || canCleanupConfirm(sender) || canSpikes(sender)
                 || canStatus(sender) || canAbout(sender) || canUpdateNotify(sender)
-                || canUpdateCheck(sender);
+                || canUpdateCheck(sender) || canPlugins(sender) || canHistory(sender)
+                || canHistorySpikes(sender) || canHistoryPerformance(sender) || canSchedule(sender);
     }
 }

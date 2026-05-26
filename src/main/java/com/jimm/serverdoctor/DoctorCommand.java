@@ -1,10 +1,11 @@
 package com.jimm.serverdoctor;
 
-import io.papermc.paper.command.brigadier.BasicCommand;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.io.IOException;
@@ -15,7 +16,7 @@ import java.util.Locale;
 import java.util.OptionalLong;
 import java.util.logging.Level;
 
-public final class DoctorCommand implements BasicCommand {
+public final class DoctorCommand implements CommandExecutor, TabCompleter {
 
     private final ServerDoctorPlugin plugin;
     private final long pluginEnabledAtMillis;
@@ -25,6 +26,9 @@ public final class DoctorCommand implements BasicCommand {
     private final RecommendationService recommendationService;
     private final LagSpikeDetectorService lagSpikeDetectorService;
     private final UpdateCheckerService updateCheckerService;
+    private final PluginImpactScannerService pluginImpactScannerService;
+    private final PerformanceHistoryService performanceHistoryService;
+    private final ScheduledReportService scheduledReportService;
 
     public DoctorCommand(
             ServerDoctorPlugin plugin,
@@ -33,7 +37,10 @@ public final class DoctorCommand implements BasicCommand {
             ChunkAnalyzerService chunkAnalyzerService,
             RecommendationService recommendationService,
             LagSpikeDetectorService lagSpikeDetectorService,
-            UpdateCheckerService updateCheckerService
+            UpdateCheckerService updateCheckerService,
+            PluginImpactScannerService pluginImpactScannerService,
+            PerformanceHistoryService performanceHistoryService,
+            ScheduledReportService scheduledReportService
     ) {
         this.plugin = plugin;
         this.pluginEnabledAtMillis = plugin.getEnabledAtMillis();
@@ -43,19 +50,25 @@ public final class DoctorCommand implements BasicCommand {
         this.recommendationService = recommendationService;
         this.lagSpikeDetectorService = lagSpikeDetectorService;
         this.updateCheckerService = updateCheckerService;
+        this.pluginImpactScannerService = pluginImpactScannerService;
+        this.performanceHistoryService = performanceHistoryService;
+        this.scheduledReportService = scheduledReportService;
     }
 
     @Override
-    public void execute(CommandSourceStack source, String[] args) {
-        CommandSender sender = source.getSender();
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!Permissions.canRunAnyDoctorCommand(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
+            return true;
+        }
 
         if (args.length == 0) {
             if (!Permissions.canUse(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
-                return;
+                return true;
             }
             sendQuickReport(sender, ServerStats.collect(pluginEnabledAtMillis));
-            return;
+            return true;
         }
 
         String subcommand = args[0];
@@ -63,105 +76,126 @@ public final class DoctorCommand implements BasicCommand {
         if (subcommand.equalsIgnoreCase("report")) {
             if (!Permissions.canReport(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.REPORT));
-                return;
+                return true;
             }
             sendHealthReport(sender, ServerStats.collect(pluginEnabledAtMillis));
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("reload")) {
             handleReload(sender);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("alerts")) {
             if (!Permissions.canAlerts(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.ALERTS));
-                return;
+                return true;
             }
             sendAlertsStatus(sender, ServerStats.collect(pluginEnabledAtMillis));
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("export")) {
             handleExport(sender);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("discord")) {
             if (!Permissions.canAlerts(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.ALERTS));
-                return;
+                return true;
             }
             sendDiscordStatus(sender);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("chunks")) {
             handleChunks(sender);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("tpchunk")) {
             handleTpChunk(sender, args);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("cleanup")) {
             handleCleanup(sender, args);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("spikes")) {
             if (!Permissions.canSpikes(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.SPIKES));
-                return;
+                return true;
             }
             sendSpikesStatus(sender);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("status")) {
             if (!Permissions.canStatus(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.STATUS));
-                return;
+                return true;
             }
             sendServerStatus(sender, ServerStats.collect(pluginEnabledAtMillis));
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("about")) {
             if (!Permissions.canAbout(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.ABOUT));
-                return;
+                return true;
             }
             PluginAbout.sendAbout(sender, plugin);
-            return;
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("update")) {
             handleUpdate(sender, args);
-            return;
+            return true;
+        }
+
+        if (subcommand.equalsIgnoreCase("plugins")) {
+            handlePlugins(sender);
+            return true;
+        }
+
+        if (subcommand.equalsIgnoreCase("history")) {
+            handleHistory(sender, args);
+            return true;
+        }
+
+        if (subcommand.equalsIgnoreCase("schedule")) {
+            if (!Permissions.canSchedule(sender)) {
+                MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.SCHEDULE));
+                return true;
+            }
+            scheduledReportService.sendStatus(sender);
+            return true;
         }
 
         if (subcommand.equalsIgnoreCase("help")) {
             if (!Permissions.canUse(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
-                return;
+                return true;
             }
             sendHelp(sender);
-            return;
+            return true;
         }
 
         MessageUtil.send(sender, MessageUtil.unknownCommand());
-        if (Permissions.canRunAnyDoctorCommand(sender)) {
-            sendHelp(sender);
-        }
+        sendHelp(sender);
+        return true;
     }
 
     @Override
-    public Collection<String> suggest(CommandSourceStack source, String[] args) {
-        CommandSender sender = source.getSender();
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        return new ArrayList<>(suggestSubcommands(sender, args));
+    }
+
+    private Collection<String> suggestSubcommands(CommandSender sender, String[] args) {
 
         if (args.length == 0 || args.length == 1) {
             String typed = args.length == 1 ? args[0].toLowerCase(Locale.ROOT) : "";
@@ -199,12 +233,16 @@ public final class DoctorCommand implements BasicCommand {
             }
         }
 
-        return List.of();
-    }
+        if (args.length >= 2 && args[0].equalsIgnoreCase("history")) {
+            if (args.length == 2) {
+                String typed = args[1].toLowerCase(Locale.ROOT);
+                return historySubcommandSuggestions(sender).stream()
+                        .filter(option -> option.startsWith(typed))
+                        .toList();
+            }
+        }
 
-    @Override
-    public boolean canUse(CommandSender sender) {
-        return Permissions.canRunAnyDoctorCommand(sender);
+        return List.of();
     }
 
     private void sendHelp(CommandSender sender) {
@@ -325,6 +363,51 @@ public final class DoctorCommand implements BasicCommand {
             }
             anyCommandListed = true;
         }
+        if (Permissions.canPlugins(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor plugins",
+                    "Scan installed plugins for areas worth performance review"
+            ));
+            anyCommandListed = true;
+        }
+        if (Permissions.canHistory(sender) || Permissions.canHistorySpikes(sender)
+                || Permissions.canHistoryPerformance(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            if (Permissions.canHistory(sender)) {
+                MessageUtil.send(sender, MessageUtil.helpEntry(
+                        "/doctor history",
+                        "Performance history overview and trend summary"
+                ));
+            }
+            if (Permissions.canHistorySpikes(sender)) {
+                MessageUtil.send(sender, MessageUtil.helpEntry(
+                        "/doctor history spikes",
+                        "Recent lag spikes with timestamps and severity"
+                ));
+            }
+            if (Permissions.canHistoryPerformance(sender)) {
+                MessageUtil.send(sender, MessageUtil.helpEntry(
+                        "/doctor history performance",
+                        "Rolling averages and improved/degraded trends"
+                ));
+            }
+            anyCommandListed = true;
+        }
+        if (Permissions.canSchedule(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor schedule",
+                    "Scheduled diagnostic report status and next run time"
+            ));
+            anyCommandListed = true;
+        }
         if (Permissions.canUse(sender)) {
             MessageUtil.send(sender, MessageUtil.helpEntry("/doctor help", "Show this help menu"));
         }
@@ -373,7 +456,74 @@ public final class DoctorCommand implements BasicCommand {
         if (Permissions.canUpdateNotify(sender) || Permissions.canUpdateCheck(sender)) {
             subcommands.add("update");
         }
+        if (Permissions.canPlugins(sender)) {
+            subcommands.add("plugins");
+        }
+        if (Permissions.canHistory(sender) || Permissions.canHistorySpikes(sender)
+                || Permissions.canHistoryPerformance(sender)) {
+            subcommands.add("history");
+        }
+        if (Permissions.canSchedule(sender)) {
+            subcommands.add("schedule");
+        }
         return subcommands;
+    }
+
+    private List<String> historySubcommandSuggestions(CommandSender sender) {
+        List<String> options = new ArrayList<>();
+        if (Permissions.canHistorySpikes(sender)) {
+            options.add("spikes");
+        }
+        if (Permissions.canHistoryPerformance(sender)) {
+            options.add("performance");
+        }
+        return options;
+    }
+
+    private void handleHistory(CommandSender sender, String[] args) {
+        if (args.length >= 2) {
+            String sub = args[1];
+            if (sub.equalsIgnoreCase("spikes")) {
+                if (!Permissions.canHistorySpikes(sender)) {
+                    MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.HISTORY_SPIKES));
+                    return;
+                }
+                performanceHistoryService.sendSpikeHistory(sender);
+                return;
+            }
+            if (sub.equalsIgnoreCase("performance")) {
+                if (!Permissions.canHistoryPerformance(sender)) {
+                    MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.HISTORY_PERFORMANCE));
+                    return;
+                }
+                performanceHistoryService.sendPerformanceHistory(sender);
+                return;
+            }
+        }
+
+        if (!Permissions.canHistory(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.HISTORY));
+            return;
+        }
+        performanceHistoryService.sendOverview(sender);
+    }
+
+    private void handlePlugins(CommandSender sender) {
+        if (!Permissions.canPlugins(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.PLUGINS));
+            return;
+        }
+
+        PluginImpactScannerConfig scannerConfig = pluginConfig.getPluginImpactScanner();
+        if (!scannerConfig.isEnabled()) {
+            MessageUtil.send(sender, MessageUtil.error("&cPlugin impact scanner is disabled in config.yml."));
+            return;
+        }
+
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            PluginImpactScanResult result = pluginImpactScannerService.scan(pluginConfig);
+            pluginImpactScannerService.sendReport(sender, pluginConfig, result, scannerConfig);
+        });
     }
 
     private void handleUpdate(CommandSender sender, String[] args) {
@@ -842,6 +992,8 @@ public final class DoctorCommand implements BasicCommand {
         alertService.start();
         lagSpikeDetectorService.start();
         updateCheckerService.onReload();
+        performanceHistoryService.start();
+        scheduledReportService.start();
         MessageUtil.send(sender, MessageUtil.reloadSuccess());
     }
 

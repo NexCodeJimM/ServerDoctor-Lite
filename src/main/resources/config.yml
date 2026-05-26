@@ -40,12 +40,35 @@ cleanup:
   log-actions: true
 
 # --- SpigotMC update checker (notify only — never auto-downloads) ---
-# Resource: https://www.spigotmc.org/resources/serverdoctor.135585/
+# Resource: https://www.spigotmc.org/resources/serverdoctor.135602/
 update-checker:
   enabled: true
-  spigot-resource-id: 135585
   check-on-startup: true
   notify-ops-on-join: true
+
+# --- Plugin impact scanner (/doctor plugins) ---
+# Advisory only — does not prove which plugin causes lag.
+plugin-impact-scanner:
+  enabled: true
+  show-plugin-list: true
+  task-warning-threshold: 100
+  listener-warning-threshold: 100
+
+# --- Historical performance tracking (/doctor history) ---
+# In-memory ring buffer; optional daily CSV files in plugins/ServerDoctor/history/
+history:
+  enabled: true
+  sample-interval-seconds: 60
+  max-history-entries: 1440
+  save-history-files: true
+
+# --- Scheduled diagnostic reports (/doctor schedule) ---
+# Off by default — enable when you want automatic health summaries.
+scheduled-reports:
+  enabled: false
+  interval-hours: 24
+  save-to-file: true
+  send-to-discord: false
 
 # --- Lag spike detection ---
 lag-spike-detection:

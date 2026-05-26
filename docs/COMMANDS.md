@@ -26,6 +26,11 @@ All commands use the base **`/doctor`** command. Tab completion shows only subco
 | `/doctor reload` | `serverdoctor.reload` |
 | `/doctor update` | `serverdoctor.update.notify` |
 | `/doctor update check` | `serverdoctor.update.check` |
+| `/doctor plugins` | `serverdoctor.plugins` |
+| `/doctor history` | `serverdoctor.history` |
+| `/doctor history spikes` | `serverdoctor.history.spikes` |
+| `/doctor history performance` | `serverdoctor.history.performance` |
+| `/doctor schedule` | `serverdoctor.schedule` |
 
 ---
 
@@ -129,6 +134,71 @@ Includes server info, performance, chunks, warnings, recommendations, and config
 ## `/doctor reload`
 
 Reloads `config.yml` and restarts background alert and lag spike checks.
+
+---
+
+## `/doctor plugins`
+
+Scans **enabled** plugins and shows an advisory impact report:
+
+- Total installed plugins and stack category (light / moderate / heavy / very large)
+- Plugin names (optional full list via config)
+- Approximate scheduled task and event listener counts per plugin
+- Whether Paper timings appear enabled (from `config/paper-global.yml` when detectable)
+- **Worth reviewing** notes for high task/listener counts or large stacks
+
+**Does not** claim any plugin is definitely causing lag. Uses wording like “worth reviewing” and “possible performance contributor.”
+
+Requires `plugin-impact-scanner.enabled: true` in config.
+
+---
+
+## `/doctor history`
+
+Performance history overview from in-memory samples:
+
+- Average TPS, MSPT, and memory over the tracked period
+- Recent lag spike count and cleanup run count (this server session)
+- Simple trend summary (improved / stable / degraded)
+
+Requires `history.enabled: true` in config.
+
+---
+
+## `/doctor history spikes`
+
+Lists recent lag spikes detected since startup:
+
+- Timestamp
+- Severity (Mild / Moderate / Severe)
+- TPS, MSPT, and memory at detection time
+
+Shows up to the 10 most recent events.
+
+---
+
+## `/doctor history performance`
+
+Rolling performance averages and trend comparison:
+
+- All tracked samples, ~last 15 minutes, ~last 60 minutes (based on sample interval)
+- Whether TPS, MSPT, and memory improved or degraded over the tracked window
+
+---
+
+## `/doctor schedule`
+
+Shows scheduled diagnostic report settings:
+
+- Enabled or disabled
+- Interval in hours
+- Whether files are saved and Discord summaries are enabled
+- **Next** scheduled report time (this server session)
+- **Last** generated report time and filename (if any)
+
+Automatic reports use the same diagnostic content as `/doctor export`, saved under `plugins/ServerDoctor/scheduled-reports/`. Discord receives a **short summary only** when `send-to-discord` is true and Discord webhooks are configured.
+
+Off by default — set `scheduled-reports.enabled: true` in config.
 
 ---
 

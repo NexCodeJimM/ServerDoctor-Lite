@@ -10,7 +10,7 @@ public final class PluginAbout {
     public static final String PLUGIN_NAME = "ServerDoctor";
     public static final String EDITION = "Lite";
     public static final String AUTHOR = "jimm";
-    public static final String PLATFORM = "Paper 26.1.x";
+    public static final String PLATFORM = "Spigot/Paper 1.21.x – 26.1.x";
     public static final String DESCRIPTION =
             "Monitor server health, find lag-heavy chunks, and get beginner-friendly recommendations.";
     /** Placeholder until a public repository URL is published. */
@@ -20,7 +20,7 @@ public final class PluginAbout {
     }
 
     public static String version(ServerDoctorPlugin plugin) {
-        return plugin.getPluginMeta().getVersion();
+        return SpigotApiCompat.pluginVersion(plugin);
     }
 
     public static void sendAbout(CommandSender sender, ServerDoctorPlugin plugin) {
@@ -28,7 +28,8 @@ public final class PluginAbout {
         MessageUtil.sendStat(sender, "Plugin", PLUGIN_NAME + " " + EDITION);
         MessageUtil.sendStat(sender, "Version", version(plugin));
         MessageUtil.sendStat(sender, "Author", AUTHOR);
-        MessageUtil.sendStat(sender, "Platform", PLATFORM);
+        MessageUtil.sendStat(sender, "Supported", PLATFORM);
+        MessageUtil.sendStat(sender, "This server", SpigotApiCompat.serverSoftwareSummary());
         MessageUtil.blank(sender);
         MessageUtil.sendSection(sender, "Description");
         MessageUtil.send(sender, MessageUtil.info("&7" + DESCRIPTION));

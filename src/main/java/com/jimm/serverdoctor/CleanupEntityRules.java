@@ -26,7 +26,7 @@ public final class CleanupEntityRules {
         if (entity instanceof Player) {
             return true;
         }
-        if (entity.customName() != null) {
+        if (SpigotApiCompat.hasCustomName(entity)) {
             return true;
         }
         if (entity instanceof Tameable tameable && tameable.isTamed()) {

@@ -3,28 +3,27 @@ plugins {
 }
 
 group = 'com.jimm'
-version = '0.9.0-BETA'
+version = '0.9.1-BETA'
 
 repositories {
+    mavenCentral()
     maven {
-        name = 'papermc'
-        url = 'https://repo.papermc.io/repository/maven-public/'
+        name = 'spigotmc'
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
     }
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.1.2.build.+'
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
+    // Compile against 1.21.x API so the plugin stays compatible with older Spigot servers.
+    compileOnly 'org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT'
+    compileOnly 'net.kyori:adventure-api:4.17.0'
+    compileOnly 'net.kyori:adventure-text-serializer-legacy:4.17.0'
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 25
+    // Java 21: runs on Spigot/Paper 1.21.x. Also works on 26.1.x servers (Java 25).
+    options.release = 21
 }
 
 jar {

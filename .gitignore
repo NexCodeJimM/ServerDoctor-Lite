@@ -46,6 +46,8 @@ Desktop.ini
 # --- Plugin runtime data (if generated inside a test checkout) ---
 **/ServerDoctor/reports/
 **/ServerDoctor/logs/
+**/ServerDoctor/history/
+**/ServerDoctor/scheduled-reports/
 
 # --- Release packages (attach JARs to GitHub Releases — do not commit binaries) ---
 release/**/*.jar

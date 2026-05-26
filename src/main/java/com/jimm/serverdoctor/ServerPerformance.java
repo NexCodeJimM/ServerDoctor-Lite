@@ -1,10 +1,7 @@
 package com.jimm.serverdoctor;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Server;
-
 /**
- * Reads TPS and MSPT from Paper's {@link Server} API.
+ * Reads TPS and MSPT for Spigot/Paper 1.21.x through 26.1.x.
  */
 public final class ServerPerformance {
 
@@ -12,14 +9,10 @@ public final class ServerPerformance {
     }
 
     public static double readCurrentTps() {
-        double[] tpsSamples = Bukkit.getServer().getTPS();
-        if (tpsSamples.length == 0) {
-            return 20.0;
-        }
-        return tpsSamples[0];
+        return SpigotApiCompat.readCurrentTps();
     }
 
     public static double readMspt() {
-        return Bukkit.getServer().getAverageTickTime();
+        return SpigotApiCompat.readMspt();
     }
 }

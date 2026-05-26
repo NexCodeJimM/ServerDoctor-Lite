@@ -44,11 +44,11 @@ public final class MessageUtil {
     }
 
     public static void send(CommandSender sender, Component message) {
-        sender.sendMessage(message);
+        AdventureMessages.send(sender, message);
     }
 
     public static void blank(CommandSender sender) {
-        sender.sendMessage(Component.empty());
+        AdventureMessages.send(sender, Component.empty());
     }
 
     public static void sendHeader(CommandSender sender, String title) {

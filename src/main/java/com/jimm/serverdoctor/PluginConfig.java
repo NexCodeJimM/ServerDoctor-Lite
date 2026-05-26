@@ -26,6 +26,9 @@ public final class PluginConfig {
     private final CleanupConfig cleanup = new CleanupConfig();
     private final LagSpikeConfig lagSpike = new LagSpikeConfig();
     private final UpdateCheckerConfig updateChecker = new UpdateCheckerConfig();
+    private final PluginImpactScannerConfig pluginImpactScanner = new PluginImpactScannerConfig();
+    private final HistoryConfig history = new HistoryConfig();
+    private final ScheduledReportsConfig scheduledReports = new ScheduledReportsConfig();
     private final MessageConfig messages = new MessageConfig();
 
     public PluginConfig(ServerDoctorPlugin plugin) {
@@ -61,6 +64,9 @@ public final class PluginConfig {
         cleanup.load(config);
         lagSpike.load(config);
         updateChecker.load(config);
+        pluginImpactScanner.load(config);
+        history.load(config);
+        scheduledReports.load(config);
         messages.load(config);
         MessageUtil.setMessages(messages);
     }
@@ -157,5 +163,17 @@ public final class PluginConfig {
 
     public UpdateCheckerConfig getUpdateChecker() {
         return updateChecker;
+    }
+
+    public PluginImpactScannerConfig getPluginImpactScanner() {
+        return pluginImpactScanner;
+    }
+
+    public HistoryConfig getHistory() {
+        return history;
+    }
+
+    public ScheduledReportsConfig getScheduledReports() {
+        return scheduledReports;
     }
 }

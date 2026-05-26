@@ -1,12 +1,12 @@
 # ServerDoctor Lite
 
-[![Version](https://img.shields.io/badge/version-0.9.0--BETA-blue)](CHANGELOG.md)
-[![Platform](https://img.shields.io/badge/platform-Paper%2026.1.x-orange)](docs/INSTALLATION.md)
+[![Version](https://img.shields.io/badge/version-0.9.1--BETA-blue)](CHANGELOG.md)
+[![Platform](https://img.shields.io/badge/platform-Spigot%201.21.x–26.1.x-orange)](docs/INSTALLATION.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**ServerDoctor Lite** is a Paper plugin that helps Minecraft server owners monitor performance, spot warnings, find lag-heavy chunks, and share diagnostic reports with hosts or developers.
+**ServerDoctor Lite** is a Spigot plugin that helps Minecraft server owners monitor performance, spot warnings, find lag-heavy chunks, and share diagnostic reports with hosts or developers.
 
-**Current release:** `0.9.0-BETA` (public beta)
+**Current release:** `0.9.1-BETA` (public beta)
 
 ---
 
@@ -20,6 +20,9 @@
 - Lag spike detection with optional Discord alerts
 - Full diagnostic `.txt` export for support tickets
 - Optional SpigotMC update notifications (notify only, no auto-download)
+- Plugin impact scanner — `/doctor plugins` for advisory performance review hints
+- Historical performance tracking — `/doctor history` with in-memory trends and optional CSV logs
+- Scheduled diagnostic reports — `/doctor schedule` (optional automatic summaries to file or Discord)
 
 **Lite edition** — no web dashboard or automatic world editing. See [CHANGELOG.md](CHANGELOG.md) for details.
 
@@ -27,8 +30,8 @@
 
 ## Requirements
 
-- **Paper** 26.1.x
-- **Java** 25
+- **Spigot** or **Paper** 1.21.x through 26.1.x
+- **Java** 21+ (Java 25 recommended for Minecraft 26.1)
 
 ---
 
@@ -64,6 +67,9 @@
 /doctor chunks       Heaviest loaded chunks
 /doctor export       Diagnostic .txt report
 /doctor update       SpigotMC version status
+/doctor plugins      Plugin stack impact scan
+/doctor history      Performance trends overview
+/doctor schedule     Scheduled report status
 /doctor help         Commands you can use
 ```
 
@@ -84,7 +90,7 @@ Output: `build/libs/ServerDoctor-0.9.0-BETA.jar` (local build — attach to GitH
 Copy/paste starter text:
 
 ```text
-ServerDoctor Lite helps you monitor server health on Paper 26.1.x.
+ServerDoctor Lite helps you monitor server health on Spigot/Paper 1.21.x through 26.1.x.
 Check TPS, MSPT, memory, entities, and loaded chunks with /doctor and /doctor status.
 Find lag-heavy chunks, export diagnostic reports for your host, and get optional Discord alerts.
 Safe cleanup tools let you preview entity removal before confirming.

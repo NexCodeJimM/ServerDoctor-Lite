@@ -98,7 +98,6 @@ cleanup:
 ```yaml
 update-checker:
   enabled: true
-  spigot-resource-id: 135585
   check-on-startup: true
   notify-ops-on-join: true
 ```
@@ -106,15 +105,77 @@ update-checker:
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `enabled` | `true` | Master switch for update checks |
-| `spigot-resource-id` | `0` | SpigotMC numeric resource ID (`0` = disabled, no checks) |
 | `check-on-startup` | `true` | Check SpigotMC when the server starts (async) |
 | `notify-ops-on-join` | `true` | Remind staff with `serverdoctor.update.notify` when an update is known |
 
-**ServerDoctor resource:** [serverdoctor.135585](https://www.spigotmc.org/resources/serverdoctor.135585/) — use ID **`135585`**.
-
-If `spigot-resource-id` is `0` while the checker is enabled, the console shows a configuration warning and **no network request** is made.
+**ServerDoctor resource:** [serverdoctor.135602](https://www.spigotmc.org/resources/serverdoctor.135602/)
 
 The checker uses SpigotMC’s public API (`legacy/update.php`). It compares your installed version (from plugin metadata) with the latest version on SpigotMC. **No files are downloaded.**
+
+---
+
+## Plugin impact scanner
+
+```yaml
+plugin-impact-scanner:
+  enabled: true
+  show-plugin-list: true
+  task-warning-threshold: 100
+  listener-warning-threshold: 100
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `true` | Allow `/doctor plugins` |
+| `show-plugin-list` | `true` | List every installed plugin name in chat |
+| `task-warning-threshold` | `100` | Flag plugins with at least this many scheduled tasks (pending + active workers) |
+| `listener-warning-threshold` | `100` | Flag plugins with at least this many registered event listeners |
+
+Counts are **approximate snapshots** — advisory only, not proof of lag.
+
+---
+
+## Historical performance tracking
+
+```yaml
+history:
+  enabled: true
+  sample-interval-seconds: 60
+  max-history-entries: 1440
+  save-history-files: true
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `true` | Record periodic snapshots and allow history commands |
+| `sample-interval-seconds` | `60` | How often to sample (seconds) |
+| `max-history-entries` | `1440` | Max in-memory samples (~24h at 60s interval) |
+| `save-history-files` | `true` | Append daily CSV files under `plugins/ServerDoctor/history/` |
+
+No database is used. History resets on server restart (in-memory buffer). CSV files persist on disk for manual review.
+
+---
+
+## Scheduled diagnostic reports
+
+```yaml
+scheduled-reports:
+  enabled: false
+  interval-hours: 24
+  save-to-file: true
+  send-to-discord: false
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `false` | Generate reports automatically on a timer |
+| `interval-hours` | `24` | Hours between each scheduled report |
+| `save-to-file` | `true` | Save full `.txt` reports to `plugins/ServerDoctor/scheduled-reports/` |
+| `send-to-discord` | `false` | Send a short summary embed to Discord (requires `discord-alerts-enabled` and a webhook URL) |
+
+The full report is never pasted into Discord — only TPS, MSPT, memory, warning count, and the filename.
+
+Use `/doctor schedule` to see the next run time and last generated file.
 
 ---
 

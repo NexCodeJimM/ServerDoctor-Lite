@@ -115,6 +115,68 @@ public final class DiscordWebhookService {
                 + "}";
     }
 
+    /**
+     * Sends a short scheduled-report summary (not the full diagnostic file).
+     */
+    public void sendScheduledReportSummary(ServerStats stats, int activeWarningCount, String savedFilename) {
+        if (!pluginConfig.shouldSendDiscordAlerts()) {
+            return;
+        }
+
+        String webhookUrl = pluginConfig.getDiscordWebhookUrl().trim();
+        String jsonBody = buildScheduledReportJsonPayload(stats, activeWarningCount, savedFilename);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(webhookUrl))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .whenComplete((response, error) -> {
+                    if (error != null) {
+                        plugin.getLogger().log(Level.WARNING, "Discord scheduled report webhook failed", error);
+                        return;
+                    }
+                    int statusCode = response.statusCode();
+                    if (statusCode < 200 || statusCode >= 300) {
+                        plugin.getLogger().warning(
+                                "Discord scheduled report webhook returned HTTP " + statusCode
+                        );
+                    }
+                });
+    }
+
+    private String buildScheduledReportJsonPayload(
+            ServerStats stats,
+            int activeWarningCount,
+            String savedFilename
+    ) {
+        String serverName = Bukkit.getServer().getName();
+        String title = pluginConfig.getDiscordAlertTitle() + " — Scheduled Report";
+        String fileLine = savedFilename == null
+                ? "No file saved (save-to-file disabled)"
+                : "scheduled-reports/" + savedFilename;
+
+        return "{"
+                + "\"username\":\"ServerDoctor\","
+                + "\"embeds\":[{"
+                + "\"title\":\"" + escapeJson(title) + "\","
+                + "\"color\":3447003,"
+                + "\"fields\":["
+                + field("Server", serverName, true)
+                + "," + field("TPS", ServerStats.formatTps(stats.currentTps), true)
+                + "," + field("MSPT", ServerStats.formatMspt(stats.mspt), true)
+                + "," + field("Memory", String.format("%.1f%%", stats.memoryUsagePercent), true)
+                + "," + field("Entities", String.format("%,d", stats.entityCount), true)
+                + "," + field("Loaded chunks", String.valueOf(stats.loadedChunkCount), true)
+                + "," + field("Active warnings", String.valueOf(activeWarningCount), true)
+                + "," + field("Report file", fileLine, false)
+                + "]"
+                + "}]"
+                + "}";
+    }
+
     private String buildJsonPayload(AlertType type, ServerStats stats) {
         String serverName = Bukkit.getServer().getName();
         String alertType = HealthChecker.alertTypeName(type);

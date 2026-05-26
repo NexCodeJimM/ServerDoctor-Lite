@@ -93,7 +93,7 @@ public final class LagSpikeDetectorService {
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (Permissions.canAlerts(player)) {
-                player.sendMessage(message);
+                AdventureMessages.send(player, message);
             }
         }
     }

@@ -193,4 +193,50 @@ public final class RecommendationService {
     private static int serverHopperLimit(PluginConfig config) {
         return Math.max(100, config.getChunkWarningHopperLimit() * 5);
     }
+
+    /**
+     * Recommendations for {@code /doctor plugins} (advisory only).
+     */
+    public List<String> forPluginImpact(
+            PluginConfig config,
+            int totalPlugins,
+            PluginCountCategory countCategory,
+            PaperTimingsStatus timingsStatus,
+            List<PluginImpactMetrics> plugins,
+            PluginImpactScannerConfig scannerConfig
+    ) {
+        if (!isEnabled(config)) {
+            return List.of();
+        }
+
+        Set<String> tips = new LinkedHashSet<>();
+
+        if (!timingsStatus.appearsEnabled()) {
+            tips.add("Consider enabling Paper timings for deeper profiling (see config/paper-global.yml).");
+        } else {
+            tips.add("Paper timings appear enabled — use /timings paste or your profiling workflow when investigating lag.");
+        }
+
+        if (countCategory == PluginCountCategory.VERY_LARGE || countCategory == PluginCountCategory.HEAVY) {
+            tips.add("A large plugin stack may deserve investigation — disable plugins you no longer use and test one change at a time.");
+        }
+
+        long highTaskPlugins = plugins.stream()
+                .filter(metrics -> metrics.getScheduledTasks() >= scannerConfig.getTaskWarningThreshold())
+                .count();
+        if (highTaskPlugins > 0) {
+            tips.add("Plugins with high scheduled task counts are worth reviewing — they may be possible performance contributors.");
+        }
+
+        long highListenerPlugins = plugins.stream()
+                .filter(metrics -> metrics.getListeners() >= scannerConfig.getListenerWarningThreshold())
+                .count();
+        if (highListenerPlugins > 0) {
+            tips.add("Plugins with many event listeners may deserve investigation during lag spikes.");
+        }
+
+        tips.add("This scan does not prove which plugin causes lag — combine with timings, /doctor chunks, and controlled tests.");
+
+        return new ArrayList<>(tips);
+    }
 }

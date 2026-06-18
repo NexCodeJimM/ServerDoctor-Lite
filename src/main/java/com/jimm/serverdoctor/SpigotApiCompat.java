@@ -6,7 +6,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * Version-safe helpers for Spigot/Paper from 1.21.x through 26.1.x.
+ * Version-safe helpers for Spigot/Paper from 1.21.x through 26.2.x.
  * Uses reflection for APIs that were added in newer releases.
  */
 public final class SpigotApiCompat {

@@ -31,6 +31,15 @@ All commands use the base **`/doctor`** command. Tab completion shows only subco
 | `/doctor history spikes` | `serverdoctor.history.spikes` |
 | `/doctor history performance` | `serverdoctor.history.performance` |
 | `/doctor schedule` | `serverdoctor.schedule` |
+| `/doctor investigate start` | `serverdoctor.investigate` |
+| `/doctor investigate stop` | `serverdoctor.investigate` |
+| `/doctor investigate status` | `serverdoctor.investigate` |
+| `/doctor investigate summary` | `serverdoctor.investigate` |
+| `/doctor baseline create` | `serverdoctor.baseline` |
+| `/doctor baseline compare` | `serverdoctor.baseline` |
+| `/doctor baseline status` | `serverdoctor.baseline` |
+| `/doctor baseline delete` | `serverdoctor.baseline` |
+| `/doctor baseline delete confirm` | `serverdoctor.baseline` |
 
 ---
 
@@ -199,6 +208,55 @@ Shows scheduled diagnostic report settings:
 Automatic reports use the same diagnostic content as `/doctor export`, saved under `plugins/ServerDoctor/scheduled-reports/`. Discord receives a **short summary only** when `send-to-discord` is true and Discord webhooks are configured.
 
 Off by default — set `scheduled-reports.enabled: true` in config.
+
+---
+
+## `/doctor investigate`
+
+Temporary troubleshooting sessions (in-memory only). Use when investigating lag or performance issues over a period of time.
+
+| Subcommand | Description |
+|------------|-------------|
+| `start` | Begin a new session; resets counters and records who started it |
+| `stop` | End the active session with a short summary |
+| `status` | Whether a session is active, who started it, duration, and live tracked counts |
+| `summary` | Full session summary with advisory final recommendation |
+
+**During an active session**, ServerDoctor tracks:
+
+- Periodic TPS/MSPT and memory samples
+- Lag spike events (from lag spike detection)
+- Heaviest chunk seen when you run `/doctor chunks` (if enabled in config)
+- Cleanup preview and confirm usage (if enabled)
+- Recommendation bullets shown in supported commands (if enabled)
+
+**Auto-stop:** Sessions end automatically after `investigation.auto-stop-minutes` (default 30). The last summary remains available until you run `start` again.
+
+**Wording:** Summaries use advisory language (“may indicate”, “worth reviewing”) — they do not claim an exact root cause.
+
+Requires `investigation.enabled: true` in config.
+
+---
+
+## `/doctor baseline`
+
+Save and compare a performance snapshot when your server is in a known-good state.
+
+| Subcommand | Description |
+|------------|-------------|
+| `create` | Save current metrics to `plugins/ServerDoctor/baselines/default.yml` (overwrites previous) |
+| `compare` | Show changes vs baseline with **improved**, **stable**, or **degraded** labels per metric |
+| `status` | Whether a baseline exists and its saved values |
+| `delete` | Warn before removal — does not delete until you confirm |
+| `delete confirm` | Permanently remove the saved baseline file |
+
+**Saved snapshot includes:** date/time, executor, server/Java/plugin versions, TPS, MSPT, memory %, players, worlds, chunks, entities, plugin count, and overall status.
+
+**Compare output** includes short advisory suggestions (e.g. run `/doctor chunks` if entities rose significantly). Wording does not claim an exact root cause.
+
+Baseline summary and comparison are included in `/doctor export` when a baseline exists.
+
+Requires `baseline.enabled: true` in config.
 
 ---
 

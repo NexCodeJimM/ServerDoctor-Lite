@@ -29,6 +29,8 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
     private final PluginImpactScannerService pluginImpactScannerService;
     private final PerformanceHistoryService performanceHistoryService;
     private final ScheduledReportService scheduledReportService;
+    private final InvestigationSessionService investigationSessionService;
+    private final BaselineService baselineService;
 
     public DoctorCommand(
             ServerDoctorPlugin plugin,
@@ -40,7 +42,9 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
             UpdateCheckerService updateCheckerService,
             PluginImpactScannerService pluginImpactScannerService,
             PerformanceHistoryService performanceHistoryService,
-            ScheduledReportService scheduledReportService
+            ScheduledReportService scheduledReportService,
+            InvestigationSessionService investigationSessionService,
+            BaselineService baselineService
     ) {
         this.plugin = plugin;
         this.pluginEnabledAtMillis = plugin.getEnabledAtMillis();
@@ -53,6 +57,8 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
         this.pluginImpactScannerService = pluginImpactScannerService;
         this.performanceHistoryService = performanceHistoryService;
         this.scheduledReportService = scheduledReportService;
+        this.investigationSessionService = investigationSessionService;
+        this.baselineService = baselineService;
     }
 
     @Override
@@ -176,6 +182,16 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (subcommand.equalsIgnoreCase("investigate")) {
+            handleInvestigate(sender, args);
+            return true;
+        }
+
+        if (subcommand.equalsIgnoreCase("baseline")) {
+            handleBaseline(sender, args);
+            return true;
+        }
+
         if (subcommand.equalsIgnoreCase("help")) {
             if (!Permissions.canUse(sender)) {
                 MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.USE));
@@ -242,7 +258,89 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
             }
         }
 
+        if (args.length >= 2 && args[0].equalsIgnoreCase("investigate") && Permissions.canInvestigate(sender)) {
+            if (args.length == 2) {
+                String typed = args[1].toLowerCase(Locale.ROOT);
+                return investigateSubcommandSuggestions().stream()
+                        .filter(option -> option.startsWith(typed))
+                        .toList();
+            }
+        }
+
+        if (args.length >= 2 && args[0].equalsIgnoreCase("baseline") && Permissions.canBaseline(sender)) {
+            if (args.length == 2) {
+                String typed = args[1].toLowerCase(Locale.ROOT);
+                return baselineSubcommandSuggestions().stream()
+                        .filter(option -> option.startsWith(typed))
+                        .toList();
+            }
+            if (args.length == 3 && args[1].equalsIgnoreCase("delete")) {
+                String typed = args[2].toLowerCase(Locale.ROOT);
+                if ("confirm".startsWith(typed)) {
+                    return List.of("confirm");
+                }
+            }
+        }
+
         return List.of();
+    }
+
+    private static List<String> baselineSubcommandSuggestions() {
+        return List.of("create", "compare", "status", "delete");
+    }
+
+    private static List<String> investigateSubcommandSuggestions() {
+        return List.of("start", "stop", "status", "summary");
+    }
+
+    private void handleInvestigate(CommandSender sender, String[] args) {
+        if (!Permissions.canInvestigate(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.INVESTIGATE));
+            return;
+        }
+
+        if (args.length < 2) {
+            MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor investigate <start|stop|status|summary>"));
+            return;
+        }
+
+        String action = args[1].toLowerCase(Locale.ROOT);
+        switch (action) {
+            case "start" -> investigationSessionService.startSession(sender);
+            case "stop" -> investigationSessionService.stopSession(sender);
+            case "status" -> investigationSessionService.sendStatus(sender);
+            case "summary" -> investigationSessionService.sendSummary(sender);
+            default -> MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor investigate <start|stop|status|summary>"));
+        }
+    }
+
+    private void handleBaseline(CommandSender sender, String[] args) {
+        if (!Permissions.canBaseline(sender)) {
+            MessageUtil.send(sender, MessageUtil.permissionDenied(Permissions.BASELINE));
+            return;
+        }
+
+        if (args.length < 2) {
+            MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor baseline <create|compare|status|delete>"));
+            return;
+        }
+
+        String action = args[1].toLowerCase(Locale.ROOT);
+        switch (action) {
+            case "create" -> baselineService.create(sender);
+            case "compare" -> baselineService.compare(sender);
+            case "status" -> baselineService.sendStatus(sender);
+            case "delete" -> handleBaselineDelete(sender, args);
+            default -> MessageUtil.send(sender, MessageUtil.error("&cUsage: /doctor baseline <create|compare|status|delete>"));
+        }
+    }
+
+    private void handleBaselineDelete(CommandSender sender, String[] args) {
+        if (args.length >= 3 && args[2].equalsIgnoreCase("confirm")) {
+            baselineService.deleteConfirmed(sender);
+            return;
+        }
+        baselineService.requestDelete(sender);
     }
 
     private void sendHelp(CommandSender sender) {
@@ -408,6 +506,50 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
             ));
             anyCommandListed = true;
         }
+        if (Permissions.canInvestigate(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor investigate start",
+                    "Start a troubleshooting session (tracks spikes, chunks, cleanup)"
+            ));
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor investigate stop",
+                    "Stop the active session and show a short summary"
+            ));
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor investigate status",
+                    "View active session progress and tracked counts"
+            ));
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor investigate summary",
+                    "Full session summary with advisory final recommendation"
+            ));
+            anyCommandListed = true;
+        }
+        if (Permissions.canBaseline(sender)) {
+            if (!anyCommandListed) {
+                MessageUtil.sendSection(sender, "Commands");
+            }
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor baseline create",
+                    "Save current performance snapshot as the default baseline"
+            ));
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor baseline compare",
+                    "Compare current metrics against the saved baseline"
+            ));
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor baseline status",
+                    "View saved baseline details"
+            ));
+            MessageUtil.send(sender, MessageUtil.helpEntry(
+                    "/doctor baseline delete",
+                    "Remove baseline (use delete confirm)"
+            ));
+            anyCommandListed = true;
+        }
         if (Permissions.canUse(sender)) {
             MessageUtil.send(sender, MessageUtil.helpEntry("/doctor help", "Show this help menu"));
         }
@@ -465,6 +607,12 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
         }
         if (Permissions.canSchedule(sender)) {
             subcommands.add("schedule");
+        }
+        if (Permissions.canInvestigate(sender)) {
+            subcommands.add("investigate");
+        }
+        if (Permissions.canBaseline(sender)) {
+            subcommands.add("baseline");
         }
         return subcommands;
     }
@@ -684,6 +832,7 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
         if (Permissions.canCleanupConfirm(sender)) {
             MessageUtil.send(sender, MessageUtil.info("&7To execute cleanup, run &f/doctor cleanup confirm&7."));
         }
+        investigationSessionService.onCleanupPreview();
         MessageUtil.sendFooter(sender);
     }
 
@@ -760,6 +909,7 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
         if (cleanup.isLogActions()) {
             CleanupActionLogger.log(plugin, result);
         }
+        investigationSessionService.onCleanupConfirm(result);
 
         MessageUtil.sendSection(sender, "Results");
         MessageUtil.sendStat(sender, "Dropped items removed", String.valueOf(result.droppedItemsRemoved()));
@@ -842,6 +992,7 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
 
     private void runChunkAnalysis(CommandSender sender) {
         List<ChunkAnalysisResult> allResults = chunkAnalyzerService.analyzeLoadedChunks();
+        investigationSessionService.onChunkAnalysis(allResults);
         List<ChunkAnalysisResult> topResults = chunkAnalyzerService.getTopHeaviestChunks(allResults);
 
         MessageUtil.sendHeader(sender, "Chunk Analyzer");
@@ -938,6 +1089,7 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
             return;
         }
         MessageUtil.sendSection(sender, "Recommendations");
+        trackRecommendations(tips);
         for (String tip : tips) {
             MessageUtil.send(sender, MessageUtil.recommendationBullet(tip));
         }
@@ -949,9 +1101,17 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
             return;
         }
         MessageUtil.sendSection(sender, "Suggestions");
+        trackRecommendations(overview);
         for (String tip : overview) {
             MessageUtil.send(sender, MessageUtil.recommendationBullet(tip));
         }
+    }
+
+    private void trackRecommendations(List<String> tips) {
+        if (tips == null || tips.isEmpty()) {
+            return;
+        }
+        investigationSessionService.onRecommendationsShown(tips.size());
     }
 
     private void handleExport(CommandSender sender) {
@@ -994,6 +1154,8 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
         updateCheckerService.onReload();
         performanceHistoryService.start();
         scheduledReportService.start();
+        investigationSessionService.restart();
+        baselineService.loadFromDisk();
         MessageUtil.send(sender, MessageUtil.reloadSuccess());
     }
 
@@ -1210,6 +1372,7 @@ public final class DoctorCommand implements CommandExecutor, TabCompleter {
         MessageUtil.blank(sender);
         MessageUtil.sendSection(sender, "Recommendations");
         MessageUtil.send(sender, MessageUtil.info("&7Advisory only — review in-game before changing builds."));
+        trackRecommendations(tips);
         for (String tip : tips) {
             MessageUtil.send(sender, MessageUtil.recommendationBullet(tip));
         }

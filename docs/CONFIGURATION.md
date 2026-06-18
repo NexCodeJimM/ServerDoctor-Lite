@@ -179,6 +179,54 @@ Use `/doctor schedule` to see the next run time and last generated file.
 
 ---
 
+## Investigation sessions
+
+```yaml
+investigation:
+  enabled: true
+  auto-stop-minutes: 30
+  include-heavy-chunks: true
+  include-cleanup-events: true
+  include-recommendations: true
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `true` | Allow `/doctor investigate` and background sampling while a session is active |
+| `auto-stop-minutes` | `30` | Automatically end an active session after this many minutes |
+| `include-heavy-chunks` | `true` | Record the heaviest chunk from `/doctor chunks` scans during the session |
+| `include-cleanup-events` | `true` | Count cleanup preview and confirm runs |
+| `include-recommendations` | `true` | Count recommendation bullets shown during the session |
+
+No database is used. Data is in-memory only and resets on server restart (except the last completed summary until the next `start`).
+
+---
+
+## Performance baseline
+
+```yaml
+baseline:
+  enabled: true
+  significant-tps-drop: 1.0
+  significant-mspt-increase: 10.0
+  significant-memory-increase-percent: 15.0
+  significant-entity-increase: 500
+  significant-chunk-increase: 1000
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | `true` | Allow `/doctor baseline` commands |
+| `significant-tps-drop` | `1.0` | TPS drop (vs baseline) treated as degraded |
+| `significant-mspt-increase` | `10.0` | MSPT rise (ms) treated as degraded |
+| `significant-memory-increase-percent` | `15.0` | Memory % rise treated as degraded |
+| `significant-entity-increase` | `500` | Entity count rise treated as degraded |
+| `significant-chunk-increase` | `1000` | Loaded chunk rise treated as degraded |
+
+One default baseline is stored at `plugins/ServerDoctor/baselines/default.yml`. Creating a new baseline overwrites the previous file.
+
+---
+
 ## Lag spike detection
 
 ```yaml

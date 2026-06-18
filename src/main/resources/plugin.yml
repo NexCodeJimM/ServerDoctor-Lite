@@ -1,5 +1,5 @@
 name: ServerDoctor
-version: '0.9.1-BETA'
+version: '0.9.2-BETA'
 main: com.jimm.serverdoctor.ServerDoctorPlugin
 description: ServerDoctor Lite - server health reports and chunk analysis
 author: jimm
@@ -68,4 +68,10 @@ permissions:
     default: op
   serverdoctor.schedule:
     description: Use /doctor schedule to view scheduled diagnostic report settings
+    default: op
+  serverdoctor.investigate:
+    description: Use /doctor investigate to start, stop, and view troubleshooting sessions
+    default: op
+  serverdoctor.baseline:
+    description: Use /doctor baseline to create, compare, and manage performance baselines
     default: op

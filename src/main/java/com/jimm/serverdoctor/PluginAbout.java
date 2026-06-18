@@ -10,7 +10,7 @@ public final class PluginAbout {
     public static final String PLUGIN_NAME = "ServerDoctor";
     public static final String EDITION = "Lite";
     public static final String AUTHOR = "jimm";
-    public static final String PLATFORM = "Spigot/Paper 1.21.x – 26.1.x";
+    public static final String PLATFORM = "Spigot/Paper 1.21.x – 26.2.x";
     public static final String DESCRIPTION =
             "Monitor server health, find lag-heavy chunks, and get beginner-friendly recommendations.";
     /** Placeholder until a public repository URL is published. */

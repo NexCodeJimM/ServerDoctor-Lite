@@ -1,6 +1,6 @@
 # Installation
 
-ServerDoctor Lite **0.9.1-BETA** for **Spigot/Paper 1.21.x through 26.1.x**.
+ServerDoctor Lite **0.9.2-BETA** for **Spigot/Paper 1.21.x through 26.2.x**.
 
 ---
 
@@ -8,10 +8,16 @@ ServerDoctor Lite **0.9.1-BETA** for **Spigot/Paper 1.21.x through 26.1.x**.
 
 | Requirement | Version |
 |-------------|---------|
-| Server software | Spigot or Paper **1.21.x** through **26.1.x** |
-| Java | **21+** (use **Java 25** on Minecraft 26.1 servers) |
+| Server software | Spigot or Paper **1.21.x** through **26.2.x** (tested targets: Spigot/Paper **26.1.x**, **26.2.x**) |
+| Java | **21+** (use **Java 25** on Minecraft 26.1+ servers) |
 
 Paper is supported and recommended for timings and richer chat features. Other forks are not officially tested.
+
+### Spigot compatibility note
+
+ServerDoctor Lite compiles against the **Spigot API** (`api-version: 1.21`) and avoids Paper-only compile dependencies. TPS/MSPT use reflection with safe fallbacks on older builds.
+
+The only Paper-specific feature is **optional timings detection** on `/doctor plugins`: it reads `config/paper-global.yml` if present and reports “not detectable” on pure Spigot. No Paper API is required at runtime.
 
 ---
 

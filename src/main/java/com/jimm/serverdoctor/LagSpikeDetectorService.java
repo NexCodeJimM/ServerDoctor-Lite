@@ -73,6 +73,11 @@ public final class LagSpikeDetectorService {
 
         lagSpikeHistory.recordLatest(spike);
 
+        InvestigationSessionService investigation = plugin.getInvestigationSessionService();
+        if (investigation != null) {
+            investigation.onLagSpike(spike);
+        }
+
         if (!lagSpikeHistory.shouldSendAlert(config.getAlertCooldownSeconds())) {
             return;
         }

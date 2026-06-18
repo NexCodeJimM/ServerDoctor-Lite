@@ -29,6 +29,8 @@ public final class PluginConfig {
     private final PluginImpactScannerConfig pluginImpactScanner = new PluginImpactScannerConfig();
     private final HistoryConfig history = new HistoryConfig();
     private final ScheduledReportsConfig scheduledReports = new ScheduledReportsConfig();
+    private final InvestigationConfig investigation = new InvestigationConfig();
+    private final BaselineConfig baseline = new BaselineConfig();
     private final MessageConfig messages = new MessageConfig();
 
     public PluginConfig(ServerDoctorPlugin plugin) {
@@ -67,6 +69,8 @@ public final class PluginConfig {
         pluginImpactScanner.load(config);
         history.load(config);
         scheduledReports.load(config);
+        investigation.load(config);
+        baseline.load(config);
         messages.load(config);
         MessageUtil.setMessages(messages);
     }
@@ -175,5 +179,13 @@ public final class PluginConfig {
 
     public ScheduledReportsConfig getScheduledReports() {
         return scheduledReports;
+    }
+
+    public InvestigationConfig getInvestigation() {
+        return investigation;
+    }
+
+    public BaselineConfig getBaseline() {
+        return baseline;
     }
 }

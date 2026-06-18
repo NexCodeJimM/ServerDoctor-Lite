@@ -18,6 +18,8 @@ public final class ServerDoctorPlugin extends JavaPlugin {
     private PluginImpactScannerService pluginImpactScannerService;
     private PerformanceHistoryService performanceHistoryService;
     private ScheduledReportService scheduledReportService;
+    private InvestigationSessionService investigationSessionService;
+    private BaselineService baselineService;
 
     @Override
     public void onEnable() {
@@ -65,6 +67,12 @@ public final class ServerDoctorPlugin extends JavaPlugin {
         );
         scheduledReportService.start();
 
+        investigationSessionService = new InvestigationSessionService(this, pluginConfig);
+        investigationSessionService.start();
+
+        baselineService = new BaselineService(this, pluginConfig, recommendationService);
+        baselineService.loadFromDisk();
+
         DoctorCommand doctorCommand = new DoctorCommand(
                 this,
                 pluginConfig,
@@ -75,7 +83,9 @@ public final class ServerDoctorPlugin extends JavaPlugin {
                 updateCheckerService,
                 pluginImpactScannerService,
                 performanceHistoryService,
-                scheduledReportService
+                scheduledReportService,
+                investigationSessionService,
+                baselineService
         );
         PluginCommand doctorPluginCommand = getCommand("doctor");
         if (doctorPluginCommand != null) {
@@ -102,6 +112,9 @@ public final class ServerDoctorPlugin extends JavaPlugin {
         if (scheduledReportService != null) {
             scheduledReportService.stop();
         }
+        if (investigationSessionService != null) {
+            investigationSessionService.stop();
+        }
         getLogger().info("ServerDoctor disabled.");
     }
 
@@ -119,5 +132,13 @@ public final class ServerDoctorPlugin extends JavaPlugin {
 
     public UpdateCheckerService getUpdateCheckerService() {
         return updateCheckerService;
+    }
+
+    public InvestigationSessionService getInvestigationSessionService() {
+        return investigationSessionService;
+    }
+
+    public BaselineService getBaselineService() {
+        return baselineService;
     }
 }

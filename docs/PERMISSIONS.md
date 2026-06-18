@@ -27,6 +27,8 @@ ServerDoctor Lite uses one permission node per feature. Defaults are suitable fo
 | `serverdoctor.history.spikes` | `op` | `/doctor history spikes` |
 | `serverdoctor.history.performance` | `op` | `/doctor history performance` |
 | `serverdoctor.schedule` | `op` | `/doctor schedule` (scheduled diagnostic report status) |
+| `serverdoctor.investigate` | `op` | `/doctor investigate` (start, stop, status, summary troubleshooting sessions) |
+| `serverdoctor.baseline` | `op` | `/doctor baseline` (create, compare, status, delete performance baselines) |
 
 ---
 

@@ -17,6 +17,7 @@ public final class PluginDataFolders {
         ensureDirectory(plugin, new File(plugin.getDataFolder(), "logs"));
         ensureDirectory(plugin, new File(plugin.getDataFolder(), "history"));
         ensureDirectory(plugin, new File(plugin.getDataFolder(), "scheduled-reports"));
+        ensureDirectory(plugin, new File(plugin.getDataFolder(), "baselines"));
     }
 
     private static void ensureDirectory(ServerDoctorPlugin plugin, File directory) {

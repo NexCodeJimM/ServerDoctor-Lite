@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'com.jimm'
-version = '0.9.1-BETA'
+version = '0.9.2-BETA'
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ dependencies {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    // Java 21: runs on Spigot/Paper 1.21.x. Also works on 26.1.x servers (Java 25).
+    // Java 21: runs on Spigot/Paper 1.21.x. Also works on 26.1.x–26.2.x servers (Java 25).
     options.release = 21
 }
 

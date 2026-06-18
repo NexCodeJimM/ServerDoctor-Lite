@@ -70,6 +70,25 @@ scheduled-reports:
   save-to-file: true
   send-to-discord: false
 
+# --- Investigation sessions (/doctor investigate) ---
+# In-memory troubleshooting window — tracks spikes, samples, chunks, cleanup during a period.
+investigation:
+  enabled: true
+  auto-stop-minutes: 30
+  include-heavy-chunks: true
+  include-cleanup-events: true
+  include-recommendations: true
+
+# --- Performance baseline (/doctor baseline) ---
+# Saves one default snapshot to plugins/ServerDoctor/baselines/default.yml
+baseline:
+  enabled: true
+  significant-tps-drop: 1.0
+  significant-mspt-increase: 10.0
+  significant-memory-increase-percent: 15.0
+  significant-entity-increase: 500
+  significant-chunk-increase: 1000
+
 # --- Lag spike detection ---
 lag-spike-detection:
   enabled: true

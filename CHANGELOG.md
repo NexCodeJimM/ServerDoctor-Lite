@@ -6,6 +6,34 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.9.2-BETA] - 2026-05-29
+
+### Added
+
+- **Investigation sessions** — temporary in-memory troubleshooting windows for lag investigations
+- **`/doctor investigate start`** — begin tracking TPS/MSPT samples, lag spikes, memory peaks, heavy chunks, cleanup activity, and recommendations
+- **`/doctor investigate stop`** — end the session with a short summary (full details via `summary`)
+- **`/doctor investigate status`** — active session progress, duration, and live counters
+- **`/doctor investigate summary`** — full advisory summary (no exact root-cause claims)
+- Config section `investigation:` with `enabled`, `auto-stop-minutes`, and optional tracking toggles
+- Permission `serverdoctor.investigate` (default: op)
+- Investigation summary included in `/doctor export` when a session is active or the last completed summary is available
+- Auto-stop after `auto-stop-minutes` (default 30) with console log; last summary kept until the next `start`
+- **Performance baseline** — save and compare server snapshots over time
+- **`/doctor baseline create`** — save default baseline to `plugins/ServerDoctor/baselines/default.yml`
+- **`/doctor baseline compare`** — TPS, MSPT, memory, entities, chunks, and plugin count vs baseline (improved / stable / degraded)
+- **`/doctor baseline status`** — view saved baseline details
+- **`/doctor baseline delete confirm`** — remove saved baseline after confirmation prompt
+- Config section `baseline:` with significance thresholds for comparison
+- Permission `serverdoctor.baseline` (default: op)
+- Baseline summary and comparison included in `/doctor export` when a baseline exists
+
+### Changed
+
+- Compatibility wording updated for **Spigot/Paper 26.1.x and 26.2.x** (still compiles against Spigot API 1.21.4; no Paper-only compile dependency)
+
+---
+
 ## [0.9.1-BETA] - 2026-05-23
 
 ### Added
@@ -96,6 +124,7 @@ Pre-beta development builds (superseded by `0.9.0-BETA`).
 
 ---
 
+[0.9.2-BETA]: #
 [0.9.1-BETA]: #
 [0.9.0-BETA]: #
 [0.2.0]: #

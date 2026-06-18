@@ -1,0 +1,111 @@
+ServerDoctor Lite — Permissions & Commands Reference
+Version: 0.9.2-BETA
+Base command: /doctor
+
+Tab completion shows only subcommands the sender has permission to use.
+Console: all commands work from console except /doctor tpchunk (players only).
+
+================================================================================
+NEW IN 0.9.2-BETA
+================================================================================
+
+INVESTIGATION SESSIONS (serverdoctor.investigate — default: op)
+  /doctor investigate start     Start a troubleshooting session (tracks spikes, samples, chunks, cleanup)
+  /doctor investigate stop        Stop the active session (short summary)
+  /doctor investigate status      Active session progress and live counters
+  /doctor investigate summary     Full advisory session summary
+
+PERFORMANCE BASELINE (serverdoctor.baseline — default: op)
+  /doctor baseline create         Save snapshot to plugins/ServerDoctor/baselines/default.yml
+  /doctor baseline compare        Compare current metrics vs baseline (improved / stable / degraded)
+  /doctor baseline status         View saved baseline details
+  /doctor baseline delete         Warn before removal (does not delete yet)
+  /doctor baseline delete confirm Permanently remove the saved baseline file
+
+================================================================================
+ALL COMMANDS
+================================================================================
+
+Command                                      Permission
+--------------------------------------------------------------------------------
+/doctor                                      serverdoctor.use
+/doctor help                                 serverdoctor.use
+/doctor about                                serverdoctor.about
+/doctor status                               serverdoctor.status
+/doctor report                               serverdoctor.report
+/doctor alerts                               serverdoctor.alerts
+/doctor discord                              serverdoctor.alerts
+/doctor spikes                               serverdoctor.spikes
+/doctor chunks                               serverdoctor.chunks
+/doctor tpchunk <world> <chunkX> <chunkZ>    serverdoctor.tpchunk
+/doctor cleanup preview                      serverdoctor.cleanup.preview
+/doctor cleanup confirm                      serverdoctor.cleanup.confirm
+/doctor export                               serverdoctor.export
+/doctor reload                               serverdoctor.reload
+/doctor update                               serverdoctor.update.notify
+/doctor update check                         serverdoctor.update.check
+/doctor plugins                              serverdoctor.plugins
+/doctor history                              serverdoctor.history
+/doctor history spikes                       serverdoctor.history.spikes
+/doctor history performance                  serverdoctor.history.performance
+/doctor schedule                             serverdoctor.schedule
+/doctor investigate start                    serverdoctor.investigate
+/doctor investigate stop                     serverdoctor.investigate
+/doctor investigate status                   serverdoctor.investigate
+/doctor investigate summary                  serverdoctor.investigate
+/doctor baseline create                      serverdoctor.baseline
+/doctor baseline compare                     serverdoctor.baseline
+/doctor baseline status                      serverdoctor.baseline
+/doctor baseline delete                      serverdoctor.baseline
+/doctor baseline delete confirm              serverdoctor.baseline
+
+================================================================================
+ALL PERMISSIONS
+================================================================================
+
+Permission                          Default   Grants access to
+--------------------------------------------------------------------------------
+serverdoctor.use                    true      /doctor, /doctor help
+serverdoctor.about                  true      /doctor about
+serverdoctor.status                 op        /doctor status
+serverdoctor.report                 op        /doctor report
+serverdoctor.alerts                 op        /doctor alerts, /doctor discord, automatic health and lag spike chat alerts
+serverdoctor.export                 op        /doctor export
+serverdoctor.reload                 op        /doctor reload
+serverdoctor.chunks                 op        /doctor chunks
+serverdoctor.tpchunk                op        /doctor tpchunk, clickable teleport in /doctor chunks
+serverdoctor.cleanup.preview        op        /doctor cleanup preview
+serverdoctor.cleanup.confirm        op        /doctor cleanup confirm
+serverdoctor.spikes                 op        /doctor spikes
+serverdoctor.update.notify          op        /doctor update, SpigotMC update notifications on join
+serverdoctor.update.check           op        /doctor update check (manual SpigotMC check)
+serverdoctor.plugins                op        /doctor plugins (plugin impact scanner)
+serverdoctor.history                op        /doctor history (performance history overview)
+serverdoctor.history.spikes         op        /doctor history spikes
+serverdoctor.history.performance    op        /doctor history performance
+serverdoctor.schedule               op        /doctor schedule (scheduled diagnostic report status)
+serverdoctor.investigate            op        /doctor investigate (start, stop, status, summary)  [NEW 0.9.2]
+serverdoctor.baseline               op        /doctor baseline (create, compare, status, delete)  [NEW 0.9.2]
+
+================================================================================
+QUICK STAFF SETUP (LuckPerms / permission plugin examples)
+================================================================================
+
+Moderators (read-only diagnostics):
+  serverdoctor.use
+  serverdoctor.about
+  serverdoctor.status
+  serverdoctor.report
+
+Admins (full ServerDoctor Lite):
+  serverdoctor.*   (or grant each node above; all default op except use and about)
+
+Investigation / baseline only (add to admin group):
+  serverdoctor.investigate
+  serverdoctor.baseline
+
+================================================================================
+See also
+  docs/COMMANDS.md       — full command descriptions
+  docs/PERMISSIONS.md    — recommended permission setups
+  plugin.yml             — source of truth for permission defaults

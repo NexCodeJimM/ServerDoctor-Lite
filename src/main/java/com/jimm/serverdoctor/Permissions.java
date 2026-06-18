@@ -23,6 +23,8 @@ public final class Permissions {
     public static final String HISTORY_SPIKES = "serverdoctor.history.spikes";
     public static final String HISTORY_PERFORMANCE = "serverdoctor.history.performance";
     public static final String SCHEDULE = "serverdoctor.schedule";
+    public static final String INVESTIGATE = "serverdoctor.investigate";
+    public static final String BASELINE = "serverdoctor.baseline";
 
     private Permissions() {
     }
@@ -103,12 +105,21 @@ public final class Permissions {
         return sender.hasPermission(SCHEDULE);
     }
 
+    public static boolean canInvestigate(CommandSender sender) {
+        return sender.hasPermission(INVESTIGATE);
+    }
+
+    public static boolean canBaseline(CommandSender sender) {
+        return sender.hasPermission(BASELINE);
+    }
+
     public static boolean canRunAnyDoctorCommand(CommandSender sender) {
         return canUse(sender) || canReport(sender) || canAlerts(sender)
                 || canExport(sender) || canReload(sender) || canChunks(sender) || canTpChunk(sender)
                 || canCleanupPreview(sender) || canCleanupConfirm(sender) || canSpikes(sender)
                 || canStatus(sender) || canAbout(sender) || canUpdateNotify(sender)
                 || canUpdateCheck(sender) || canPlugins(sender) || canHistory(sender)
-                || canHistorySpikes(sender) || canHistoryPerformance(sender) || canSchedule(sender);
+                || canHistorySpikes(sender) || canHistoryPerformance(sender) || canSchedule(sender)
+                || canInvestigate(sender) || canBaseline(sender);
     }
 }

@@ -114,6 +114,8 @@ public final class ReportExporter {
         appendCleanupSummary(report, plugin);
         appendWarnings(report, stats, config);
         appendRecommendations(report, stats, config, recommendationService);
+        appendInvestigationSummary(report, plugin);
+        appendBaselineSummary(report, plugin, stats);
         appendConfigThresholds(report, config);
 
         report.append(System.lineSeparator());
@@ -294,6 +296,22 @@ public final class ReportExporter {
         report.append(System.lineSeparator());
         report.append("Advisory only — ServerDoctor does not change your world automatically.")
                 .append(System.lineSeparator());
+    }
+
+    private static void appendInvestigationSummary(StringBuilder report, ServerDoctorPlugin plugin) {
+        InvestigationSessionService investigation = plugin.getInvestigationSessionService();
+        if (investigation == null) {
+            return;
+        }
+        investigation.appendExportSection(report);
+    }
+
+    private static void appendBaselineSummary(StringBuilder report, ServerDoctorPlugin plugin, ServerStats stats) {
+        BaselineService baselineService = plugin.getBaselineService();
+        if (baselineService == null) {
+            return;
+        }
+        baselineService.appendExportSection(report, stats);
     }
 
     private static void appendConfigThresholds(StringBuilder report, PluginConfig config) {
